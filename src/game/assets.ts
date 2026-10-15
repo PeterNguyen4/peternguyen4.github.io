@@ -1,25 +1,22 @@
-import background from '../assets/backgrounds/background.webp'
-import counter from '../assets/props/counter.webp'
-import peter from '../assets/sprites/peter.png'
-import peterResumeSheet from '../assets/sprites/peter_resume_sheet.png'
+import background from '../assets/backgrounds/background.png'
+import counter from '../assets/props/counter.png'
+import peterProfileSheet from '../assets/sprites/peter_profile_spritesheet.png'
 
 export const TEXTURE = {
   background: 'background',
   counter: 'counter',
-  peter: 'peter',
-  peterResume: 'peter-resume',
+  peterProfile: 'peter-profile',
 } as const
 
 export const ANIM = {
-  handResume: 'hand-resume',
+  handProfile: 'hand-profile',
 } as const
 
 export const IMAGES = {
   [TEXTURE.background]: background,
   [TEXTURE.counter]: counter,
-  [TEXTURE.peter]: peter,
 } as const
 
 export const SPRITESHEETS = {
-  [TEXTURE.peterResume]: { url: peterResumeSheet, frameWidth: 97, frameHeight: 94 },
+  [TEXTURE.peterProfile]: { url: peterProfileSheet, frameWidth: 512, frameHeight: 512 },
 } as const
