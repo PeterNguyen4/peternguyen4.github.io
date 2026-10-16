@@ -5,6 +5,7 @@ import counter from '../assets/props/counter.png'
 import mug from '../assets/props/mug.png'
 import papers from '../assets/props/papers.png'
 import peterProfileSheet from '../assets/sprites/peter_profile_spritesheet.png'
+import steamSheet from '../assets/sprites/steam_spritesheet.png'
 
 export const TEXTURE = {
   background: 'background',
@@ -14,10 +15,12 @@ export const TEXTURE = {
   panel: 'panel',
   papers: 'papers',
   peterProfile: 'peter-profile',
+  steam: 'steam',
 } as const
 
 export const ANIM = {
   handProfile: 'hand-profile',
+  steam: 'steam',
 } as const
 
 export const IMAGES = {
@@ -30,5 +33,6 @@ export const IMAGES = {
 } as const
 
 export const SPRITESHEETS = {
-  [TEXTURE.peterProfile]: { url: peterProfileSheet, frameWidth: 512, frameHeight: 512 },
+  [TEXTURE.peterProfile]: { url: peterProfileSheet, frameWidth: 128, frameHeight: 128 },
+  [TEXTURE.steam]: { url: steamSheet, frameWidth: 32, frameHeight: 32 },
 } as const

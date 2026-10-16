@@ -8,6 +8,9 @@ const OBTAINED_MS = 2000
 const PERSON_POS = { x: 150, y: 110 }
 const PROFILE_OFFSET = { x: 0.37, y: -0.05 }
 const MUG_OFFSET = { x: 0.5, y: -0.23 }
+const STEAM_ANCHOR = { x: -1.5, y: -6 }
+const STEAM_FPS = 5
+const STEAM_ALPHA = 0.5
 
 const BG_SCALE = 1
 const COUNTER_DROP = 0.1
@@ -27,6 +30,7 @@ export class MainScene extends Phaser.Scene {
   private person!: Phaser.GameObjects.Sprite
   private profiles!: Phaser.GameObjects.Image
   private mug!: Phaser.GameObjects.Image
+  private steam!: Phaser.GameObjects.Sprite
 
   constructor() {
     super('main')
@@ -45,16 +49,27 @@ export class MainScene extends Phaser.Scene {
     this.counter = this.add.image(0, 0, TEXTURE.counter).setOrigin(0.5, 1).setDepth(2)
     this.profiles = this.add.image(0, 0, TEXTURE.papers).setDepth(3)
     this.mug = this.add.image(0, 0, TEXTURE.mug).setDepth(3)
+    this.steam = this.add
+      .sprite(0, 0, TEXTURE.steam, 0)
+      .setOrigin(0.5, 1)
+      .setDepth(3)
+      .setAlpha(STEAM_ALPHA)
     this.makeHoverable(this.profiles, TEXTURE.papers)
     this.makeHoverable(this.mug, TEXTURE.mug)
-
-    this.textures.get(TEXTURE.peterProfile).setFilter(Phaser.Textures.FilterMode.LINEAR)
 
     this.anims.create({
       key: ANIM.handProfile,
       frames: this.anims.generateFrameNumbers(TEXTURE.peterProfile, { start: 0, end: 11 }),
       frameRate: 8,
     })
+
+    this.anims.create({
+      key: ANIM.steam,
+      frames: this.anims.generateFrameNumbers(TEXTURE.steam, { start: 0, end: 7 }),
+      frameRate: STEAM_FPS,
+      repeat: -1,
+    })
+    this.steam.play(ANIM.steam)
 
     this.profiles.once('pointerdown', () => {
       this.profiles.setTexture(TEXTURE.papers)
@@ -72,7 +87,7 @@ export class MainScene extends Phaser.Scene {
   private showObtained() {
     this.person.setFrame(0)
     showPopup(this, {
-      title: "You obtained\nPETER'S PROFILE",
+      title: "You obtained\nPETER'S PROFILE!",
       width: 1100,
       height: 320,
       autoDismissMs: OBTAINED_MS,
@@ -175,5 +190,9 @@ export class MainScene extends Phaser.Scene {
         this.profiles.x + MUG_OFFSET.x * this.profiles.displayWidth,
         this.profiles.y + MUG_OFFSET.y * this.profiles.displayHeight,
       )
+
+    this.steam
+      .setScale(s)
+      .setPosition(this.mug.x + STEAM_ANCHOR.x * s, this.mug.y + STEAM_ANCHOR.y * s)
   }
 }
