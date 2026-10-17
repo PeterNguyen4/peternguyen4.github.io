@@ -1,67 +1,43 @@
 import Phaser from 'phaser'
 import { ANIM, IMAGES, SPRITESHEETS, TEXTURE } from './assets'
+import {
+  BG_SCALE,
+  COUNTER_DROP,
+  MUG_OFFSET,
+  PERSON_HEIGHT,
+  PERSON_POS,
+  PROFILE_OFFSET,
+  STEAM_ALPHA,
+  STEAM_ANCHOR,
+  TODO_CORNER,
+  TODO_NUDGE,
+  TODO_ORIGIN,
+} from './config/layout'
+import { END_HOLD_MS, OBTAINED_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
+import {
+  TOOL_GAP,
+  TOOL_ICONS,
+  TOOL_LABELS,
+  TOOL_LINKS,
+  TOOL_SCALE,
+  TOOL_SLOTS,
+  TOOLBAR_TOP,
+  TOOLBAR_X,
+  TOOLTIP_CAP,
+  TOOLTIP_DEPTH,
+  TOOLTIP_FONT,
+  TOOLTIP_FONT_NATIVE,
+  TOOLTIP_GAP,
+  TOOLTIP_HOP_MS,
+  TOOLTIP_LINE,
+  TOOLTIP_PAD,
+  TOOLTIP_PANEL,
+  TOOLTIP_TEXT_COLOR,
+  TOOLTIP_TEXT_Y,
+} from './config/toolbar'
+import { popThenSettle, TOOL_POP_MS, TOOL_SETTLE_MS } from './effects/easing'
+import { makeHoverable } from './effects/hover'
 import { showPopup } from './Popup'
-
-const END_HOLD_MS = 300
-const OBTAINED_MS = 2000
-
-const PERSON_POS = { x: 150, y: 110 }
-const PROFILE_OFFSET = { x: 0.37, y: -0.05 }
-const MUG_OFFSET = { x: 0.5, y: -0.23 }
-const STEAM_ANCHOR = { x: -1.5, y: -6 }
-const TODO_ORIGIN = { x: 13.5 / 32, y: 19.5 / 32 }
-const TODO_NUDGE = { x: 4, y: -4 }
-const TODO_CORNER = { papers: { x: 10, y: -20 }, mug: { x: 14, y: -9 } }
-const TODO_HOP_MS = 150
-const TODO_PAUSE_MS = { min: 2000, max: 4000 }
-const STEAM_FPS = 5
-const STEAM_ALPHA = 0.5
-
-const TOOL_SLOTS = 4
-const TOOLBAR_X = 0.057
-const TOOLBAR_TOP = 0.085
-const TOOL_GAP = 0.05
-const TOOL_SCALE = 0.75
-const TOOL_ICONS = [TEXTURE.linkedin, TEXTURE.github]
-const TOOL_LABELS = ['LinkedIn', 'GitHub']
-const TOOL_LINKS = ['https://www.linkedin.com/in/peternguyen4', 'https://github.com/PeterNguyen4']
-const TOOLTIP_DEPTH = 50
-const TOOLTIP_CAP = 12
-const TOOLTIP_PANEL = { left: 5, centerY: 19.5, minWidth: 22 }
-const TOOLTIP_GAP = 1
-const TOOLTIP_PAD = 4
-const TOOLTIP_FONT = '"Press Start 2P", monospace'
-const TOOLTIP_FONT_NATIVE = 4.5
-const TOOLTIP_TEXT_COLOR = '#e0e0dd'
-const TOOLTIP_TEXT_Y = -1.5
-const TOOLTIP_LINE = { color: 0x544444, y: 2.5 }
-const TOOLTIP_HOP_MS = 80
-const TOOL_POP_MS = 300
-const TOOL_SETTLE_MS = 600
-const TOOL_OVERSHOOT = 1.25
-
-const BG_SCALE = 1
-const COUNTER_DROP = 0.1
-const PERSON_HEIGHT = 0.65
-const HOVER_SUFFIX = '-hover'
-const HOVER_OUTLINE = [0x14, 0x36, 0x66]
-const HOVER_BAND = [0x7f, 0xb8, 0xe8]
-const HOVER_FILL = [0xd8, 0xf0, 0xff]
-const FILL_MIX = 0.2
-const BAND_MIX = 0.4
-const BAND_WIDTH = 1
-const OUTLINE_LUMA = 70
-
-const POP_SHARE = TOOL_POP_MS / (TOOL_POP_MS + TOOL_SETTLE_MS)
-
-function popThenSettle(t: number) {
-  if (t < POP_SHARE) {
-    const u = t / POP_SHARE
-    return TOOL_OVERSHOOT * (1 - (1 - u) * (1 - u))
-  }
-  const u = (t - POP_SHARE) / (1 - POP_SHARE)
-  return TOOL_OVERSHOOT + (1 - TOOL_OVERSHOOT) * Math.sin((u * Math.PI) / 2)
-}
 
 export class MainScene extends Phaser.Scene {
   private bg!: Phaser.GameObjects.Image
@@ -136,8 +112,8 @@ export class MainScene extends Phaser.Scene {
       .setDepth(TOOLTIP_DEPTH)
       .setVisible(false)
     this.toolIcons = TOOL_ICONS.map((key) => this.add.image(0, 0, key).setDepth(1.5))
-    this.makeHoverable(this.profiles, TEXTURE.papers)
-    this.makeHoverable(this.mug, TEXTURE.mug)
+    makeHoverable(this, this.profiles, TEXTURE.papers)
+    makeHoverable(this, this.mug, TEXTURE.mug)
     this.mug.on('pointerdown', () => {
       this.removeTodo(1)
       this.showCoffee()
@@ -279,65 +255,6 @@ export class MainScene extends Phaser.Scene {
       duration: TOOL_POP_MS + TOOL_SETTLE_MS,
       ease: popThenSettle,
     })
-  }
-
-  private makeHoverable(image: Phaser.GameObjects.Image, textureKey: string) {
-    const hoverKey = `${textureKey}${HOVER_SUFFIX}`
-    const mask = this.buildHoverTexture(textureKey, hoverKey)
-    const { width, height } = image
-    image.setInteractive(
-      new Phaser.Geom.Rectangle(0, 0, width, height),
-      (_area: Phaser.Geom.Rectangle, x: number, y: number) =>
-        x >= 0 && y >= 0 && x < width && y < height && mask[(y | 0) * width + (x | 0)] === 1,
-    )
-    image.input!.cursor = 'pointer'
-    image.on('pointerover', () => image.setTexture(hoverKey))
-    image.on('pointerout', () => image.setTexture(textureKey))
-  }
-
-  private buildHoverTexture(textureKey: string, hoverKey: string) {
-    const src = this.textures.get(textureKey).getSourceImage() as HTMLImageElement
-    const mask = new Uint8Array(src.width * src.height)
-    const canvas = this.textures.createCanvas(hoverKey, src.width, src.height)
-    if (!canvas) return mask
-    const ctx = canvas.getContext()
-    ctx.drawImage(src, 0, 0)
-    const image = ctx.getImageData(0, 0, src.width, src.height)
-    const px = image.data
-    const { width: w, height: h } = src
-    const isOutline = new Uint8Array(w * h)
-    for (let i = 0; i < w * h; i++) {
-      if (px[i * 4 + 3] === 0) continue
-      mask[i] = 1
-      if ((px[i * 4] + px[i * 4 + 1] + px[i * 4 + 2]) / 3 < OUTLINE_LUMA) isOutline[i] = 1
-    }
-    const nearOutline = (x: number, y: number) => {
-      for (let dy = -BAND_WIDTH; dy <= BAND_WIDTH; dy++) {
-        for (let dx = -BAND_WIDTH; dx <= BAND_WIDTH; dx++) {
-          const nx = x + dx
-          const ny = y + dy
-          if (nx >= 0 && ny >= 0 && nx < w && ny < h && isOutline[ny * w + nx]) return true
-        }
-      }
-      return false
-    }
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const m = y * w + x
-        if (!mask[m]) continue
-        const i = m * 4
-        if (isOutline[m]) {
-          for (let c = 0; c < 3; c++) px[i + c] = HOVER_OUTLINE[c]
-        } else if (nearOutline(x, y)) {
-          for (let c = 0; c < 3; c++) px[i + c] += (HOVER_BAND[c] - px[i + c]) * BAND_MIX
-        } else {
-          for (let c = 0; c < 3; c++) px[i + c] += (HOVER_FILL[c] - px[i + c]) * FILL_MIX
-        }
-      }
-    }
-    ctx.putImageData(image, 0, 0)
-    canvas.refresh()
-    return mask
   }
 
   private layout() {
