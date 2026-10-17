@@ -9,8 +9,36 @@ const PERSON_POS = { x: 150, y: 110 }
 const PROFILE_OFFSET = { x: 0.37, y: -0.05 }
 const MUG_OFFSET = { x: 0.5, y: -0.23 }
 const STEAM_ANCHOR = { x: -1.5, y: -6 }
+const TODO_ORIGIN = { x: 13.5 / 32, y: 19.5 / 32 }
+const TODO_NUDGE = { x: 4, y: -4 }
+const TODO_CORNER = { papers: { x: 10, y: -20 }, mug: { x: 14, y: -9 } }
+const TODO_HOP_MS = 150
+const TODO_PAUSE_MS = { min: 2000, max: 4000 }
 const STEAM_FPS = 5
 const STEAM_ALPHA = 0.5
+
+const TOOL_SLOTS = 4
+const TOOLBAR_X = 0.057
+const TOOLBAR_TOP = 0.085
+const TOOL_GAP = 0.05
+const TOOL_SCALE = 0.75
+const TOOL_ICONS = [TEXTURE.linkedin, TEXTURE.github]
+const PROFILE_SLOT = 2
+const TOOL_LABELS = ['LinkedIn', 'GitHub', 'Profile']
+const TOOLTIP_DEPTH = 50
+const TOOLTIP_CAP = 12
+const TOOLTIP_PANEL = { left: 5, centerY: 19.5, minWidth: 22 }
+const TOOLTIP_GAP = 1
+const TOOLTIP_PAD = 4
+const TOOLTIP_FONT = '"Press Start 2P", monospace'
+const TOOLTIP_FONT_NATIVE = 4.5
+const TOOLTIP_TEXT_COLOR = '#e0e0dd'
+const TOOLTIP_TEXT_Y = -1.5
+const TOOLTIP_LINE = { color: 0x544444, y: 2.5 }
+const TOOLTIP_HOP_MS = 80
+const TOOL_POP_MS = 300
+const TOOL_SETTLE_MS = 600
+const TOOL_OVERSHOOT = 1.25
 
 const BG_SCALE = 1
 const COUNTER_DROP = 0.1
@@ -24,6 +52,17 @@ const BAND_MIX = 0.4
 const BAND_WIDTH = 1
 const OUTLINE_LUMA = 70
 
+const POP_SHARE = TOOL_POP_MS / (TOOL_POP_MS + TOOL_SETTLE_MS)
+
+function popThenSettle(t: number) {
+  if (t < POP_SHARE) {
+    const u = t / POP_SHARE
+    return TOOL_OVERSHOOT * (1 - (1 - u) * (1 - u))
+  }
+  const u = (t - POP_SHARE) / (1 - POP_SHARE)
+  return TOOL_OVERSHOOT + (1 - TOOL_OVERSHOOT) * Math.sin((u * Math.PI) / 2)
+}
+
 export class MainScene extends Phaser.Scene {
   private bg!: Phaser.GameObjects.Image
   private counter!: Phaser.GameObjects.Image
@@ -31,6 +70,15 @@ export class MainScene extends Phaser.Scene {
   private profiles!: Phaser.GameObjects.Image
   private mug!: Phaser.GameObjects.Image
   private steam!: Phaser.GameObjects.Sprite
+  private todos!: { icon: Phaser.GameObjects.Image; baseY: number }[]
+  private toolItems: Phaser.GameObjects.Image[] = []
+  private toolIcons: Phaser.GameObjects.Image[] = []
+  private tooltip!: Phaser.GameObjects.Container
+  private tooltipPanel!: Phaser.GameObjects.NineSlice
+  private tooltipLabel!: Phaser.GameObjects.Text
+  private tooltipLine!: Phaser.GameObjects.Rectangle
+  private tooltipHop: Phaser.Time.TimerEvent[] = []
+  private toolScale = 1
 
   constructor() {
     super('main')
@@ -54,6 +102,37 @@ export class MainScene extends Phaser.Scene {
       .setOrigin(0.5, 1)
       .setDepth(3)
       .setAlpha(STEAM_ALPHA)
+    this.todos = [0, 1].map(() => ({
+      icon: this.add.image(0, 0, TEXTURE.todo).setOrigin(TODO_ORIGIN.x, TODO_ORIGIN.y).setDepth(3.5),
+      baseY: 0,
+    }))
+    this.todos.forEach((todo, i) => this.hopTodo(todo, i === 0 ? 0 : TODO_HOP_MS))
+    this.toolItems = Array.from({ length: TOOL_SLOTS }, () =>
+      this.add.image(0, 0, TEXTURE.toolItem).setDepth(1),
+    )
+    this.toolItems.forEach((item, i) => {
+      item.setInteractive({ cursor: i < TOOL_ICONS.length ? 'pointer' : 'default' })
+      item.on('pointerover', () => {
+        item.setTexture(TEXTURE.toolItemFocus)
+        this.showTooltip(i)
+      })
+      item.on('pointerout', () => {
+        item.setTexture(TEXTURE.toolItem)
+        this.hideTooltip()
+      })
+    })
+    this.tooltipPanel = this.add
+      .nineslice(0, 0, TEXTURE.tooltip, undefined, 32, 32, TOOLTIP_CAP, TOOLTIP_CAP)
+      .setOrigin(0)
+    this.tooltipLabel = this.add
+      .text(0, 0, '', { fontFamily: TOOLTIP_FONT, color: TOOLTIP_TEXT_COLOR })
+      .setOrigin(0.5)
+    this.tooltipLine = this.add.rectangle(0, 0, 1, 1, TOOLTIP_LINE.color).setOrigin(0)
+    this.tooltip = this.add
+      .container(0, 0, [this.tooltipPanel, this.tooltipLabel, this.tooltipLine])
+      .setDepth(TOOLTIP_DEPTH)
+      .setVisible(false)
+    this.toolIcons = TOOL_ICONS.map((key) => this.add.image(0, 0, key).setDepth(1.5))
     this.makeHoverable(this.profiles, TEXTURE.papers)
     this.makeHoverable(this.mug, TEXTURE.mug)
 
@@ -84,6 +163,56 @@ export class MainScene extends Phaser.Scene {
     this.layout()
   }
 
+  private hopTodo(todo: { icon: Phaser.GameObjects.Image; baseY: number }, delay: number) {
+    this.time.delayedCall(delay, () => {
+      todo.icon.setY(todo.baseY - this.toolScale)
+      this.time.delayedCall(TODO_HOP_MS, () => {
+        todo.icon.setY(todo.baseY)
+        this.hopTodo(todo, Phaser.Math.Between(TODO_PAUSE_MS.min, TODO_PAUSE_MS.max))
+      })
+    })
+  }
+
+  private showTooltip(i: number) {
+    const label = TOOL_LABELS[i]
+    const slot = this.toolItems[i]
+    if (!label || !this.toolIcons[i]) return
+    const ts = this.toolScale
+
+    this.tooltipLabel.setFontSize(Math.round(ts * TOOLTIP_FONT_NATIVE)).setText(label)
+    const panelW = Math.max(TOOLTIP_PANEL.minWidth, Math.ceil(this.tooltipLabel.width / ts) + 2 * TOOLTIP_PAD)
+
+    this.tooltipPanel
+      .setSize(panelW + 2 * TOOLTIP_PANEL.left, 32)
+      .setScale(ts)
+      .setPosition(-TOOLTIP_PANEL.left * ts, -TOOLTIP_PANEL.centerY * ts)
+    this.tooltipLabel.setPosition((panelW / 2) * ts, TOOLTIP_TEXT_Y * ts)
+    const lineW = this.tooltipLabel.width
+    this.tooltipLine
+      .setSize(lineW, ts)
+      .setPosition((panelW / 2) * ts - lineW / 2, TOOLTIP_LINE.y * ts)
+
+    const y = slot.y
+    this.clearTooltipHop()
+    this.tooltip
+      .setPosition(slot.x + slot.displayWidth / 2 + TOOLTIP_GAP * ts, y)
+      .setVisible(true)
+    this.tooltipHop = [
+      this.time.delayedCall(TOOLTIP_HOP_MS, () => this.tooltip.setY(y - ts)),
+      this.time.delayedCall(TOOLTIP_HOP_MS * 2, () => this.tooltip.setY(y)),
+    ]
+  }
+
+  private hideTooltip() {
+    this.clearTooltipHop()
+    this.tooltip.setVisible(false)
+  }
+
+  private clearTooltipHop() {
+    this.tooltipHop.forEach((timer) => timer.remove())
+    this.tooltipHop = []
+  }
+
   private showObtained() {
     this.person.setFrame(0)
     showPopup(this, {
@@ -101,6 +230,26 @@ export class MainScene extends Phaser.Scene {
       body: 'Full-Stack Software Engineer\n\nProjects',
       width: 1300,
       height: 760,
+      onClose: () => this.addProfileTool(),
+    })
+  }
+
+  private addProfileTool() {
+    if (this.toolIcons[PROFILE_SLOT]) return
+    const slot = this.toolItems[PROFILE_SLOT]
+    const icon = this.add
+      .image(slot.x, slot.y, TEXTURE.profileIcon)
+      .setDepth(1.5)
+      .setScale(0)
+    this.toolIcons[PROFILE_SLOT] = icon
+    slot.input!.cursor = 'pointer'
+    slot.on('pointerdown', () => this.showProfile())
+
+    this.tweens.add({
+      targets: icon,
+      scale: this.toolScale,
+      duration: TOOL_POP_MS + TOOL_SETTLE_MS,
+      ease: popThenSettle,
     })
   }
 
@@ -194,5 +343,23 @@ export class MainScene extends Phaser.Scene {
     this.steam
       .setScale(s)
       .setPosition(this.mug.x + STEAM_ANCHOR.x * s, this.mug.y + STEAM_ANCHOR.y * s)
+
+    const place = (i: number, target: Phaser.GameObjects.Image, corner: { x: number; y: number }) => {
+      const todo = this.todos[i]
+      todo.baseY = target.y + (corner.y + TODO_NUDGE.y) * s
+      todo.icon.setScale(s).setPosition(target.x + (corner.x + TODO_NUDGE.x) * s, todo.baseY)
+    }
+    place(0, this.profiles, TODO_CORNER.papers)
+    place(1, this.mug, TODO_CORNER.mug)
+
+    const ts = s * TOOL_SCALE
+    this.toolScale = ts
+    const slot = this.toolItems[0].height * ts
+    const toolTop = H * TOOLBAR_TOP + slot / 2
+    const step = slot * (1 + TOOL_GAP)
+    const toolX = Math.round(W * TOOLBAR_X)
+    const toolY = (i: number) => Math.round(toolTop + i * step)
+    this.toolItems.forEach((item, i) => item.setScale(ts).setPosition(toolX, toolY(i)))
+    this.toolIcons.forEach((icon, i) => icon.setScale(ts).setPosition(toolX, toolY(i)))
   }
 }
