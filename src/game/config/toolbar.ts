@@ -19,4 +19,5 @@ export const TOOLTIP_FONT_NATIVE = 4.5
 export const TOOLTIP_TEXT_COLOR = '#e0e0dd'
 export const TOOLTIP_TEXT_Y = -1.5
 export const TOOLTIP_LINE = { color: 0x544444, y: 2.5 }
+export const TOOLTIP_ARROW = { size: 5, gap: 2, y: 0 }
 export const TOOLTIP_HOP_MS = 80

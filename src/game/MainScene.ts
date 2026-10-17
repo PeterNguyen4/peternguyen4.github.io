@@ -23,6 +23,7 @@ import {
   TOOL_SLOTS,
   TOOLBAR_TOP,
   TOOLBAR_X,
+  TOOLTIP_ARROW,
   TOOLTIP_CAP,
   TOOLTIP_DEPTH,
   TOOLTIP_FONT,
@@ -54,6 +55,7 @@ export class MainScene extends Phaser.Scene {
   private tooltipPanel!: Phaser.GameObjects.NineSlice
   private tooltipLabel!: Phaser.GameObjects.Text
   private tooltipLine!: Phaser.GameObjects.Rectangle
+  private tooltipArrow!: Phaser.GameObjects.Image
   private tooltipHop: Phaser.Time.TimerEvent[] = []
   private toolScale = 1
 
@@ -98,7 +100,13 @@ export class MainScene extends Phaser.Scene {
         this.hideTooltip()
       })
       const link = TOOL_LINKS[i]
-      if (link) item.on('pointerdown', () => window.open(link, '_blank', 'noopener,noreferrer'))
+      if (link) {
+        item.on('pointerdown', () => {
+          window.open(link, '_blank', 'noopener,noreferrer')
+          item.setTexture(TEXTURE.toolItem)
+          this.hideTooltip()
+        })
+      }
     })
     this.tooltipPanel = this.add
       .nineslice(0, 0, TEXTURE.tooltip, undefined, 32, 32, TOOLTIP_CAP, TOOLTIP_CAP)
@@ -107,8 +115,9 @@ export class MainScene extends Phaser.Scene {
       .text(0, 0, '', { fontFamily: TOOLTIP_FONT, color: TOOLTIP_TEXT_COLOR })
       .setOrigin(0.5)
     this.tooltipLine = this.add.rectangle(0, 0, 1, 1, TOOLTIP_LINE.color).setOrigin(0)
+    this.tooltipArrow = this.add.image(0, 0, TEXTURE.arrow).setOrigin(0, 0.5)
     this.tooltip = this.add
-      .container(0, 0, [this.tooltipPanel, this.tooltipLabel, this.tooltipLine])
+      .container(0, 0, [this.tooltipPanel, this.tooltipLabel, this.tooltipLine, this.tooltipArrow])
       .setDepth(TOOLTIP_DEPTH)
       .setVisible(false)
     this.toolIcons = TOOL_ICONS.map((key) => this.add.image(0, 0, key).setDepth(1.5))
@@ -171,17 +180,24 @@ export class MainScene extends Phaser.Scene {
     const ts = this.toolScale
 
     this.tooltipLabel.setFontSize(Math.round(ts * TOOLTIP_FONT_NATIVE)).setText(label)
-    const panelW = Math.max(TOOLTIP_PANEL.minWidth, Math.ceil(this.tooltipLabel.width / ts) + 2 * TOOLTIP_PAD)
+    const hasArrow = !!TOOL_LINKS[i]
+    const labelW = this.tooltipLabel.width / ts
+    const arrowW = hasArrow ? TOOLTIP_ARROW.gap + TOOLTIP_ARROW.size : 0
+    const panelW = Math.max(TOOLTIP_PANEL.minWidth, Math.ceil(labelW + arrowW) + 2 * TOOLTIP_PAD)
+    const groupLeft = (panelW - labelW - arrowW) / 2
 
     this.tooltipPanel
       .setSize(panelW + 2 * TOOLTIP_PANEL.left, 32)
       .setScale(ts)
       .setPosition(-TOOLTIP_PANEL.left * ts, -TOOLTIP_PANEL.centerY * ts)
-    this.tooltipLabel.setPosition((panelW / 2) * ts, TOOLTIP_TEXT_Y * ts)
-    const lineW = this.tooltipLabel.width
+    this.tooltipLabel.setPosition((groupLeft + labelW / 2) * ts, TOOLTIP_TEXT_Y * ts)
     this.tooltipLine
-      .setSize(lineW, ts)
-      .setPosition((panelW / 2) * ts - lineW / 2, TOOLTIP_LINE.y * ts)
+      .setSize(this.tooltipLabel.width, ts)
+      .setPosition(groupLeft * ts, TOOLTIP_LINE.y * ts)
+    this.tooltipArrow
+      .setVisible(hasArrow)
+      .setScale(ts)
+      .setPosition((groupLeft + labelW + TOOLTIP_ARROW.gap) * ts, (TOOLTIP_TEXT_Y + TOOLTIP_ARROW.y) * ts)
 
     const y = slot.y
     this.clearTooltipHop()
