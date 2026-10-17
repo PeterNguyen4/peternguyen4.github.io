@@ -24,6 +24,7 @@ const TOOL_GAP = 0.05
 const TOOL_SCALE = 0.75
 const TOOL_ICONS = [TEXTURE.linkedin, TEXTURE.github]
 const TOOL_LABELS = ['LinkedIn', 'GitHub']
+const TOOL_LINKS = ['https://www.linkedin.com/in/peternguyen4', 'https://github.com/PeterNguyen4']
 const TOOLTIP_DEPTH = 50
 const TOOLTIP_CAP = 12
 const TOOLTIP_PANEL = { left: 5, centerY: 19.5, minWidth: 22 }
@@ -120,6 +121,8 @@ export class MainScene extends Phaser.Scene {
         item.setTexture(TEXTURE.toolItem)
         this.hideTooltip()
       })
+      const link = TOOL_LINKS[i]
+      if (link) item.on('pointerdown', () => window.open(link, '_blank', 'noopener,noreferrer'))
     })
     this.tooltipPanel = this.add
       .nineslice(0, 0, TEXTURE.tooltip, undefined, 32, 32, TOOLTIP_CAP, TOOLTIP_CAP)
@@ -249,7 +252,7 @@ export class MainScene extends Phaser.Scene {
   private showCoffee() {
     showPopup(this, {
       title: 'COFFEE',
-      body: "Fuel for late-night builds.\n\nLet's chat!",
+      body: "+25 Energy (or +50 at night).\n\nLove coffee? Let's chat!",
       width: 1100,
       height: 520,
       onClose: () => this.addTool(TEXTURE.coffee, 'Coffee', () => this.showCoffee()),
