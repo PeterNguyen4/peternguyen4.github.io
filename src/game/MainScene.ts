@@ -23,8 +23,7 @@ const TOOLBAR_TOP = 0.085
 const TOOL_GAP = 0.05
 const TOOL_SCALE = 0.75
 const TOOL_ICONS = [TEXTURE.linkedin, TEXTURE.github]
-const PROFILE_SLOT = 2
-const TOOL_LABELS = ['LinkedIn', 'GitHub', 'Profile']
+const TOOL_LABELS = ['LinkedIn', 'GitHub']
 const TOOLTIP_DEPTH = 50
 const TOOLTIP_CAP = 12
 const TOOLTIP_PANEL = { left: 5, centerY: 19.5, minWidth: 22 }
@@ -73,6 +72,7 @@ export class MainScene extends Phaser.Scene {
   private todos!: { icon: Phaser.GameObjects.Image; baseY: number }[]
   private toolItems: Phaser.GameObjects.Image[] = []
   private toolIcons: Phaser.GameObjects.Image[] = []
+  private toolLabels: string[] = [...TOOL_LABELS]
   private tooltip!: Phaser.GameObjects.Container
   private tooltipPanel!: Phaser.GameObjects.NineSlice
   private tooltipLabel!: Phaser.GameObjects.Text
@@ -135,6 +135,10 @@ export class MainScene extends Phaser.Scene {
     this.toolIcons = TOOL_ICONS.map((key) => this.add.image(0, 0, key).setDepth(1.5))
     this.makeHoverable(this.profiles, TEXTURE.papers)
     this.makeHoverable(this.mug, TEXTURE.mug)
+    this.mug.on('pointerdown', () => {
+      this.removeTodo(1)
+      this.showCoffee()
+    })
 
     this.anims.create({
       key: ANIM.handProfile,
@@ -153,6 +157,7 @@ export class MainScene extends Phaser.Scene {
     this.profiles.once('pointerdown', () => {
       this.profiles.setTexture(TEXTURE.papers)
       this.profiles.disableInteractive(true)
+      this.removeTodo(0)
       this.person.play(ANIM.handProfile)
     })
 
@@ -165,16 +170,23 @@ export class MainScene extends Phaser.Scene {
 
   private hopTodo(todo: { icon: Phaser.GameObjects.Image; baseY: number }, delay: number) {
     this.time.delayedCall(delay, () => {
+      if (!todo.icon.active) return
       todo.icon.setY(todo.baseY - this.toolScale)
       this.time.delayedCall(TODO_HOP_MS, () => {
+        if (!todo.icon.active) return
         todo.icon.setY(todo.baseY)
         this.hopTodo(todo, Phaser.Math.Between(TODO_PAUSE_MS.min, TODO_PAUSE_MS.max))
       })
     })
   }
 
+  private removeTodo(i: number) {
+    const { icon } = this.todos[i]
+    if (icon.active) icon.destroy()
+  }
+
   private showTooltip(i: number) {
-    const label = TOOL_LABELS[i]
+    const label = this.toolLabels[i]
     const slot = this.toolItems[i]
     if (!label || !this.toolIcons[i]) return
     const ts = this.toolScale
@@ -234,16 +246,29 @@ export class MainScene extends Phaser.Scene {
     })
   }
 
+  private showCoffee() {
+    showPopup(this, {
+      title: 'COFFEE',
+      body: "Fuel for late-night builds.\n\nLet's chat!",
+      width: 1100,
+      height: 520,
+      onClose: () => this.addTool(TEXTURE.coffee, 'Coffee', () => this.showCoffee()),
+    })
+  }
+
   private addProfileTool() {
-    if (this.toolIcons[PROFILE_SLOT]) return
-    const slot = this.toolItems[PROFILE_SLOT]
-    const icon = this.add
-      .image(slot.x, slot.y, TEXTURE.profileIcon)
-      .setDepth(1.5)
-      .setScale(0)
-    this.toolIcons[PROFILE_SLOT] = icon
+    this.addTool(TEXTURE.profileIcon, 'Profile', () => this.showProfile())
+  }
+
+  private addTool(textureKey: string, label: string, onClick: () => void) {
+    const index = this.toolIcons.length
+    if (index >= TOOL_SLOTS || this.toolIcons.some((icon) => icon.texture.key === textureKey)) return
+    const slot = this.toolItems[index]
+    const icon = this.add.image(slot.x, slot.y, textureKey).setDepth(1.5).setScale(0)
+    this.toolIcons[index] = icon
+    this.toolLabels[index] = label
     slot.input!.cursor = 'pointer'
-    slot.on('pointerdown', () => this.showProfile())
+    slot.on('pointerdown', onClick)
 
     this.tweens.add({
       targets: icon,

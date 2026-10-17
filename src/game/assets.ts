@@ -1,4 +1,5 @@
 import background from '../assets/backgrounds/background.png'
+import coffee from '../assets/backgrounds/coffee.png'
 import github from '../assets/backgrounds/github.png'
 import linkedin from '../assets/backgrounds/linkedin.png'
 import profileIcon from '../assets/backgrounds/profile.png'
@@ -17,6 +18,7 @@ import steamSheet from '../assets/sprites/steam_spritesheet.png'
 export const TEXTURE = {
   background: 'background',
   closeButton: 'close-button',
+  coffee: 'coffee',
   counter: 'counter',
   github: 'github',
   linkedin: 'linkedin',
@@ -40,6 +42,7 @@ export const ANIM = {
 export const IMAGES = {
   [TEXTURE.background]: background,
   [TEXTURE.closeButton]: closeButton,
+  [TEXTURE.coffee]: coffee,
   [TEXTURE.panel]: panel,
   [TEXTURE.profileIcon]: profileIcon,
   [TEXTURE.counter]: counter,
