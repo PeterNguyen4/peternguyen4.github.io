@@ -1,0 +1,11 @@
+export const PERSON_POS = { x: 150, y: 110 }
+export const PROFILE_OFFSET = { x: 0.37, y: -0.05 }
+export const MUG_OFFSET = { x: 0.5, y: -0.23 }
+export const STEAM_ANCHOR = { x: -1.5, y: -6 }
+export const STEAM_ALPHA = 0.5
+export const TODO_ORIGIN = { x: 13.5 / 32, y: 19.5 / 32 }
+export const TODO_NUDGE = { x: 4, y: -4 }
+export const TODO_CORNER = { papers: { x: 10, y: -20 }, mug: { x: 14, y: -9 } }
+export const BG_SCALE = 1
+export const COUNTER_DROP = 0.1
+export const PERSON_HEIGHT = 0.65
