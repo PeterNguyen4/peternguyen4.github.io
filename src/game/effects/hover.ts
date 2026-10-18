@@ -1,13 +1,14 @@
 import Phaser from 'phaser'
-
-const HOVER_SUFFIX = '-hover'
-const HOVER_OUTLINE = [0x14, 0x36, 0x66]
-const HOVER_BAND = [0x7f, 0xb8, 0xe8]
-const HOVER_FILL = [0xd8, 0xf0, 0xff]
-const FILL_MIX = 0.2
-const BAND_MIX = 0.4
-const BAND_WIDTH = 1
-const OUTLINE_LUMA = 70
+import {
+  BAND_MIX,
+  BAND_WIDTH,
+  FILL_MIX,
+  HOVER_BAND,
+  HOVER_FILL,
+  HOVER_OUTLINE,
+  HOVER_SUFFIX,
+  OUTLINE_LUMA,
+} from '../config/hover'
 
 export function makeHoverable(scene: Phaser.Scene, image: Phaser.GameObjects.Image, textureKey: string) {
   const hoverKey = `${textureKey}${HOVER_SUFFIX}`

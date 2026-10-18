@@ -1,25 +1,28 @@
 import Phaser from 'phaser'
 import { TEXTURE } from './assets'
-
-const FONT = '"Press Start 2P", monospace'
-const PANEL_SLICE = 10
-const CLOSE_PLATE = { x0: 4, y0: 4, x1: 10, y1: 10 }
-const CLOSE_HOVER_MULT = [0.88, 0.82, 0.72]
-const CLOSE_HOVER_KEY = 'close-button-hover'
-const CLOSE_OFFSET = { x: -17, y: 3 }
-const PANEL_SCALE = 4
-const DEPTH = 100
-
-export const PALETTE = {
-  outline: '#5a3d22',
-  edge: '#d9bf8c',
-  center: '#f1e2bd',
-  text: '#4a3320',
-} as const
+import {
+  CLOSE_HOVER_KEY,
+  CLOSE_HOVER_MULT,
+  CLOSE_OFFSET,
+  CLOSE_PLATE,
+  FONT,
+  PALETTE,
+  PANEL_SCALE,
+  PANEL_SLICE,
+  POPUP_BODY_LINE_SPACING,
+  POPUP_BODY_SIZE,
+  POPUP_CONTENT_GAP,
+  POPUP_DEPTH,
+  POPUP_DIM_ALPHA,
+  POPUP_TITLE_SIZE,
+  POPUP_TITLE_TOP,
+  POPUP_WRAP_PAD,
+} from './config/popup'
 
 export interface PopupOptions {
   title: string
   body?: string
+  content?: (container: Phaser.GameObjects.Container, area: Phaser.Geom.Rectangle) => void
   width: number
   height: number
   autoDismissMs?: number
@@ -45,9 +48,10 @@ function ensureCloseHoverTexture(scene: Phaser.Scene) {
 export function showPopup(scene: Phaser.Scene, opts: PopupOptions) {
   ensureCloseHoverTexture(scene)
   const { width: W, height: H } = scene.scale
-  const container = scene.add.container(0, 0).setDepth(DEPTH)
+  const container = scene.add.container(0, 0).setDepth(POPUP_DEPTH)
+  const topAligned = !!(opts.body || opts.content)
 
-  const dim = scene.add.rectangle(0, 0, W, H, 0x000000, 0.5).setOrigin(0).setInteractive()
+  const dim = scene.add.rectangle(0, 0, W, H, 0x000000, POPUP_DIM_ALPHA).setOrigin(0).setInteractive()
   const panel = scene.add
     .nineslice(
       W / 2,
@@ -62,16 +66,16 @@ export function showPopup(scene: Phaser.Scene, opts: PopupOptions) {
       PANEL_SLICE,
     )
     .setScale(PANEL_SCALE)
-  const wrap = opts.width - 2 * PANEL_SLICE * PANEL_SCALE - 32
+  const wrap = opts.width - 2 * PANEL_SLICE * PANEL_SCALE - POPUP_WRAP_PAD
   const title = scene.add
-    .text(W / 2, H / 2 - (opts.body ? opts.height / 2 - 80 : 0), opts.title, {
+    .text(W / 2, H / 2 - (topAligned ? opts.height / 2 - POPUP_TITLE_TOP : 0), opts.title, {
       fontFamily: FONT,
-      fontSize: '32px',
+      fontSize: POPUP_TITLE_SIZE,
       color: PALETTE.text,
       align: 'center',
       wordWrap: { width: wrap },
     })
-    .setOrigin(0.5, opts.body ? 0 : 0.5)
+    .setOrigin(0.5, topAligned ? 0 : 0.5)
   const close = scene.add
     .image(
       W / 2 + opts.width / 2 + CLOSE_OFFSET.x * PANEL_SCALE,
@@ -84,14 +88,23 @@ export function showPopup(scene: Phaser.Scene, opts: PopupOptions) {
     .on('pointerover', () => close.setTexture(CLOSE_HOVER_KEY))
     .on('pointerout', () => close.setTexture(TEXTURE.closeButton))
   container.add([dim, panel, title, close])
+  opts.content?.(
+    container,
+    new Phaser.Geom.Rectangle(
+      W / 2 - opts.width / 2,
+      title.y + title.height + POPUP_CONTENT_GAP,
+      opts.width,
+      H / 2 + opts.height / 2 - (title.y + title.height + POPUP_CONTENT_GAP),
+    ),
+  )
 
   if (opts.body) {
     const body = scene.add
-      .text(W / 2 - wrap / 2, title.y + title.height + 40, opts.body, {
+      .text(W / 2 - wrap / 2, title.y + title.height + POPUP_CONTENT_GAP, opts.body, {
         fontFamily: FONT,
-        fontSize: '20px',
+        fontSize: POPUP_BODY_SIZE,
         color: PALETTE.text,
-        lineSpacing: 14,
+        lineSpacing: POPUP_BODY_LINE_SPACING,
         wordWrap: { width: wrap },
       })
       .setOrigin(0)

@@ -13,7 +13,27 @@ import {
   TODO_NUDGE,
   TODO_ORIGIN,
 } from './config/layout'
-import { END_HOLD_MS, OBTAINED_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
+import {
+  BUFF_COLOR,
+  COFFEE_BUFF_ROWS,
+  COFFEE_BUFF_SIZE,
+  COFFEE_CAPTION,
+  COFFEE_CTA,
+  COFFEE_FRAME_SLICE,
+  COFFEE_LABEL_SIZE,
+  COFFEE_LEFT_X,
+  COFFEE_RATINGS,
+  COFFEE_RIGHT_X,
+  COFFEE_ROW_HEIGHT,
+  COFFEE_STARS_Y,
+  COFFEE_TUB_SCALE,
+  COFFEE_TUB_Y,
+  ICON_GAP,
+  ICON_SCALE,
+  NIGHT_COLOR,
+} from './config/coffee'
+import { COFFEE_POPUP, FONT, OBTAINED_POPUP, PALETTE, PROFILE_POPUP } from './config/popup'
+import { END_HOLD_MS, HAND_PROFILE_FPS, OBTAINED_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
   TOOL_ICONS,
@@ -39,6 +59,7 @@ import {
 import { popThenSettle, TOOL_POP_MS, TOOL_SETTLE_MS } from './effects/easing'
 import { makeHoverable } from './effects/hover'
 import { showPopup } from './Popup'
+import { addStars } from './Rating'
 
 export class MainScene extends Phaser.Scene {
   private bg!: Phaser.GameObjects.Image
@@ -131,7 +152,7 @@ export class MainScene extends Phaser.Scene {
     this.anims.create({
       key: ANIM.handProfile,
       frames: this.anims.generateFrameNumbers(TEXTURE.peterProfile, { start: 0, end: 11 }),
-      frameRate: 8,
+      frameRate: HAND_PROFILE_FPS,
     })
 
     this.anims.create({
@@ -224,8 +245,7 @@ export class MainScene extends Phaser.Scene {
     this.person.setFrame(0)
     showPopup(this, {
       title: "You obtained\nPETER'S PROFILE!",
-      width: 1100,
-      height: 320,
+      ...OBTAINED_POPUP,
       autoDismissMs: OBTAINED_MS,
       onClose: () => this.showProfile(),
     })
@@ -235,8 +255,7 @@ export class MainScene extends Phaser.Scene {
     showPopup(this, {
       title: 'PETER NGUYEN',
       body: 'Full-Stack Software Engineer\n\nProjects',
-      width: 1300,
-      height: 760,
+      ...PROFILE_POPUP,
       onClose: () => this.addProfileTool(),
     })
   }
@@ -244,11 +263,88 @@ export class MainScene extends Phaser.Scene {
   private showCoffee() {
     showPopup(this, {
       title: 'COFFEE',
-      body: "+25 Energy (or +50 at night).\n\nLove coffee? Let's chat!",
-      width: 1100,
-      height: 520,
+      ...COFFEE_POPUP,
+      content: (container, area) => this.buildCoffeeReview(container, area),
       onClose: () => this.addTool(TEXTURE.coffee, 'Coffee', () => this.showCoffee()),
     })
+  }
+
+  private buildCoffeeReview(container: Phaser.GameObjects.Container, area: Phaser.Geom.Rectangle) {
+    const text = (x: number, y: number, str: string, size: number) =>
+      this.add.text(x, y, str, { fontFamily: FONT, fontSize: `${size}px`, color: PALETTE.text, align: 'center' })
+
+    const leftX = area.x + area.width * COFFEE_LEFT_X
+    const tubY = area.y + COFFEE_TUB_Y
+    const { size: sliceSize, edge } = COFFEE_FRAME_SLICE
+    const frame = this.add
+      .nineslice(leftX, tubY, TEXTURE.inset, undefined, sliceSize, sliceSize, edge, edge, edge, edge)
+      .setScale(COFFEE_TUB_SCALE)
+    const tub = this.add.image(leftX, tubY, TEXTURE.coffeeTub).setScale(COFFEE_TUB_SCALE)
+    const caption = text(leftX, area.y + COFFEE_CAPTION.y, COFFEE_CAPTION.text, COFFEE_CAPTION.size)
+      .setOrigin(0.5, 0)
+      .setLineSpacing(COFFEE_CAPTION.lineSpacing)
+    const buff = [
+      ...this.coloredLine(
+        leftX,
+        area.y + COFFEE_BUFF_ROWS.energy,
+        [{ icon: TEXTURE.energy }, ['+15', BUFF_COLOR], [' Energy']],
+        COFFEE_BUFF_SIZE,
+      ),
+      ...this.coloredLine(
+        leftX,
+        area.y + COFFEE_BUFF_ROWS.night,
+        [{ icon: TEXTURE.night }, ['2x', NIGHT_COLOR], [' at Night']],
+        COFFEE_BUFF_SIZE,
+      ),
+    ]
+    container.add([frame, tub, caption, ...buff])
+
+    const rightX = area.x + area.width * COFFEE_RIGHT_X
+    COFFEE_RATINGS.forEach(([label, value], i) => {
+      const y = area.y + i * COFFEE_ROW_HEIGHT
+      const name = text(rightX, y, label, COFFEE_LABEL_SIZE).setOrigin(0)
+      container.add([name, ...addStars(this, rightX, y + COFFEE_STARS_Y, value)])
+    })
+
+    const cta = this.add
+      .text(
+        rightX + COFFEE_CTA.offsetX,
+        area.y + COFFEE_RATINGS.length * COFFEE_ROW_HEIGHT + COFFEE_CTA.offsetY,
+        COFFEE_CTA.text,
+        {
+          fontFamily: FONT,
+          fontSize: COFFEE_CTA.size,
+          color: PALETTE.edge,
+          backgroundColor: PALETTE.outline,
+          padding: COFFEE_CTA.padding,
+        },
+      )
+      .setOrigin(0.5, 0)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => window.open(TOOL_LINKS[0], '_blank', 'noopener'))
+    container.add(cta)
+  }
+
+  /** Centered single line of colored text segments and inline icons. */
+  private coloredLine(cx: number, y: number, parts: ([string, string?] | { icon: string })[], size: number) {
+    const objs = parts.map((part) =>
+      'icon' in part
+        ? this.add.image(0, y + size / 2, part.icon).setOrigin(0, 0.5).setScale(ICON_SCALE)
+        : this.add
+            .text(0, y, part[0], {
+              fontFamily: FONT,
+              fontSize: `${size}px`,
+              color: part[1] ?? PALETTE.text,
+            })
+            .setOrigin(0),
+    )
+    const widths = objs.map((o) => o.displayWidth + (o instanceof Phaser.GameObjects.Image ? ICON_GAP : 0))
+    let x = cx - widths.reduce((sum, w) => sum + w, 0) / 2
+    objs.forEach((o, i) => {
+      o.setX(x)
+      x += widths[i]
+    })
+    return objs
   }
 
   private addProfileTool() {
