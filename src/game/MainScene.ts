@@ -35,7 +35,7 @@ import {
 } from './config/coffee'
 import { ITEM_COLOR } from './config/dialog'
 import { COFFEE_POPUP, FONT, PALETTE, PROFILE_POPUP } from './config/popup'
-import { END_HOLD_MS, HAND_PROFILE_FPS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
+import { END_HOLD_MS, HAND_PROFILE_FPS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
   TOOL_ICONS,
@@ -178,8 +178,10 @@ export class MainScene extends Phaser.Scene {
     })
 
     this.person.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM.handProfile, () => {
-      this.person.setFrame(0)
-      this.time.delayedCall(END_HOLD_MS, () => this.showObtained("PETER'S PROFILE", ITEM_COLOR.profile, () => this.showProfile()))
+      this.time.delayedCall(PROFILE_LAST_FRAME_HOLD_MS, () => {
+        this.person.setFrame(0)
+        this.time.delayedCall(END_HOLD_MS, () => this.showObtained("PETER'S PROFILE", ITEM_COLOR.profile, () => this.showProfile()))
+      })
     })
 
     this.layout()
@@ -300,15 +302,15 @@ export class MainScene extends Phaser.Scene {
       ],
       COFFEE_BUFF_SIZE,
     )
-    const { slice, scale, padX, padY } = COFFEE_STATS_PLATE
+    const { slice, scale, padLeft, padRight, padY } = COFFEE_STATS_PLATE
     const left = Math.min(...buff.map((o) => o.x))
     const right = Math.max(...buff.map((o) => o.x + o.displayWidth))
     const plateTop = banner.overlapY
     const plateBottom = area.y + COFFEE_BUFF_ROWS.night + COFFEE_BUFF_SIZE + padY
-    const plateW = right - left + 2 * padX
+    const plateW = right - left + padLeft + padRight
     const plate = this.add
       .nineslice(
-        (left + right) / 2,
+        (left - padLeft + right + padRight) / 2,
         (plateTop + plateBottom) / 2,
         TEXTURE.stats,
         undefined,
@@ -329,22 +331,34 @@ export class MainScene extends Phaser.Scene {
       container.add([name, ...addStars(this, rightX, y + COFFEE_STARS_Y, value)])
     })
 
-    const cta = this.add
-      .text(
-        rightX + COFFEE_CTA.offsetX,
-        area.y + COFFEE_RATINGS.length * COFFEE_ROW_HEIGHT + COFFEE_CTA.offsetY,
-        COFFEE_CTA.text,
-        {
-          fontFamily: FONT,
-          fontSize: COFFEE_CTA.size,
-          color: PALETTE.edge,
-          backgroundColor: PALETTE.outline,
-          padding: COFFEE_CTA.padding,
-        },
-      )
-      .setOrigin(0.5, 0)
+    const { scale: btnScale, edge: btnEdge, padding, pressDepth } = COFFEE_CTA
+    const ctaX = rightX + COFFEE_CTA.offsetX
+    const ctaY = area.y + COFFEE_RATINGS.length * COFFEE_ROW_HEIGHT + COFFEE_CTA.offsetY
+    const label = this.add
+      .text(0, 0, COFFEE_CTA.text, { fontFamily: FONT, fontSize: COFFEE_CTA.size, color: PALETTE.edge })
+      .setOrigin(0.5)
+    const btnW = (label.width + padding.x * 2) / btnScale
+    const btnH = (label.height + padding.y * 2) / btnScale
+    const button = this.add
+      .nineslice(0, 0, TEXTURE.button, undefined, btnW, btnH, btnEdge, btnEdge, btnEdge, btnEdge)
+      .setScale(btnScale)
+    const cta = this.add.container(ctaX, ctaY + (btnH * btnScale) / 2, [button, label])
+    const restLabelY = label.y + COFFEE_CTA.labelOffsetY
+    label.y = restLabelY
+    const setState = (texture: string, pressed: boolean) => {
+      button.setTexture(texture)
+      label.y = restLabelY + (pressed ? pressDepth * btnScale : 0)
+    }
+    cta
+      .setSize(btnW * btnScale, btnH * btnScale)
       .setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => window.open(TOOL_LINKS[0], '_blank', 'noopener'))
+      .on('pointerover', () => setState(TEXTURE.buttonHover, false))
+      .on('pointerout', () => setState(TEXTURE.button, false))
+      .on('pointerdown', () => setState(TEXTURE.buttonClick, true))
+      .on('pointerup', () => {
+        setState(TEXTURE.buttonHover, false)
+        window.open(TOOL_LINKS[0], '_blank', 'noopener')
+      })
     container.add(cta)
   }
 

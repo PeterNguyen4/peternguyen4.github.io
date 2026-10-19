@@ -1,4 +1,4 @@
-export const PERSON_POS = { x: 150, y: 110 }
+export const PERSON_POS = { x: 125, y: 113 }
 export const PROFILE_OFFSET = { x: 0.37, y: -0.05 }
 export const MUG_OFFSET = { x: 0.5, y: -0.23 }
 export const STEAM_ANCHOR = { x: -1.5, y: -6 }
