@@ -29,7 +29,7 @@ export const BANNER_FRAMES = {
 export const COFFEE_BUFF_SIZE = 16
 export const COFFEE_BUFF_ROWS = { energy: 386, night: 428 }
 
-export const COFFEE_STATS_PLATE = { slice: 4, scale: 4, padX: 38, padY: 38}
+export const COFFEE_STATS_PLATE = { slice: 4, scale: 4, padLeft: 58, padRight: 34, padY: 38 }
 
 export const COFFEE_RATINGS: [string, number][] = [
   ['Affordability', 4.5],
@@ -41,4 +41,4 @@ export const COFFEE_ROW_HEIGHT = 112
 export const COFFEE_LABEL_SIZE = 20
 export const COFFEE_STARS_Y = 56
 
-export const COFFEE_CTA = { text: "LET'S CHAT", size: '24px', padding: { x: 28, y: 18 }, offsetX: 160, offsetY: 30 }
+export const COFFEE_CTA = { text: "LET'S CHAT", size: '24px', padding: { x: 28, y: 28 }, labelOffsetY: -2, offsetX: 160, offsetY: 30, scale: 4, edge: 5, pressDepth: 1 }

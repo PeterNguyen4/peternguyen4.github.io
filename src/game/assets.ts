@@ -6,6 +6,9 @@ import github from '../assets/icons/github.png'
 import linkedin from '../assets/icons/linkedin.png'
 import night from '../assets/icons/night.png'
 import profileIcon from '../assets/icons/profile.png'
+import buttonBase from '../assets/ui/button-base.png'
+import buttonHover from '../assets/ui/button-hover.png'
+import buttonClick from '../assets/ui/button-click.png'
 import inset from '../assets/ui/inset.png'
 import banner from '../assets/ui/banner.png'
 import dialogue from '../assets/ui/dialogue.png'
@@ -28,6 +31,9 @@ import steamSheet from '../assets/sprites/coffee-steam-spritesheet.png'
 export const TEXTURE = {
   arrow: 'arrow',
   banner: 'banner',
+  button: 'button',
+  buttonHover: 'button-hover',
+  buttonClick: 'button-down',
   dialogue: 'dialogue',
   background: 'background',
   closeButton: 'close-button',
@@ -62,6 +68,9 @@ export const ANIM = {
 export const IMAGES = {
   [TEXTURE.arrow]: arrow,
   [TEXTURE.banner]: banner,
+  [TEXTURE.button]: buttonBase,
+  [TEXTURE.buttonHover]: buttonHover,
+  [TEXTURE.buttonClick]: buttonClick,
   [TEXTURE.dialogue]: dialogue,
   [TEXTURE.background]: background,
   [TEXTURE.closeButton]: closeButton,
