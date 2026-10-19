@@ -109,3 +109,15 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+html,
+body,
+canvas {
+  cursor: url('./assets/ui/cursor-x4.png') 0 0, default !important;
+}
+
+canvas[style*='pointer'],
+button,
+a {
+  cursor: url('./assets/ui/pointer-x4.png') 12 0, pointer !important;
+}
