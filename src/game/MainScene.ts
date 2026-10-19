@@ -292,20 +292,14 @@ export class MainScene extends Phaser.Scene {
       COFFEE_BANNER.scale,
       COFFEE_BANNER.padX,
     )
-    const buff = [
-      ...this.coloredLine(
-        leftX,
-        area.y + COFFEE_BUFF_ROWS.energy,
-        [{ icon: TEXTURE.energy }, ['+15', BUFF_COLOR], [' Energy']],
-        COFFEE_BUFF_SIZE,
-      ),
-      ...this.coloredLine(
-        leftX,
-        area.y + COFFEE_BUFF_ROWS.night,
-        [{ icon: TEXTURE.night }, ['2x', NIGHT_COLOR], [' at Night']],
-        COFFEE_BUFF_SIZE,
-      ),
-    ]
+    const buff = this.statRows(
+      leftX,
+      [
+        { y: area.y + COFFEE_BUFF_ROWS.energy, icon: TEXTURE.energy, parts: [['+15', BUFF_COLOR], [' Energy']] },
+        { y: area.y + COFFEE_BUFF_ROWS.night, icon: TEXTURE.night, parts: [['2x', NIGHT_COLOR], [' at Night']] },
+      ],
+      COFFEE_BUFF_SIZE,
+    )
     const { slice, scale, padX, padY } = COFFEE_STATS_PLATE
     const left = Math.min(...buff.map((o) => o.x))
     const right = Math.max(...buff.map((o) => o.x + o.displayWidth))
@@ -354,25 +348,31 @@ export class MainScene extends Phaser.Scene {
     container.add(cta)
   }
 
-  private coloredLine(cx: number, y: number, parts: ([string, string?] | { icon: string })[], size: number) {
-    const objs = parts.map((part) =>
-      'icon' in part
-        ? this.add.image(0, y + size / 2, part.icon).setOrigin(0, 0.5).setScale(ICON_SCALE)
-        : this.add
-            .text(0, y, part[0], {
-              fontFamily: FONT,
-              fontSize: `${size}px`,
-              color: part[1] ?? PALETTE.text,
-            })
-            .setOrigin(0),
-    )
-    const widths = objs.map((o) => o.displayWidth + (o instanceof Phaser.GameObjects.Image ? ICON_GAP : 0))
-    let x = cx - widths.reduce((sum, w) => sum + w, 0) / 2
-    objs.forEach((o, i) => {
-      o.setX(x)
-      x += widths[i]
-    })
-    return objs
+  private statRows(
+    cx: number,
+    rows: { y: number; icon: string; parts: [string, string?][] }[],
+    size: number,
+  ) {
+    const built = rows.map((row) => ({
+      icon: this.add.image(0, row.y + size / 2, row.icon).setOrigin(0.5).setScale(ICON_SCALE),
+      texts: row.parts.map(([str, color]) =>
+        this.add
+          .text(0, row.y, str, { fontFamily: FONT, fontSize: `${size}px`, color: color ?? PALETTE.text })
+          .setOrigin(0),
+      ),
+    }))
+    const iconW = Math.max(...built.map((r) => r.icon.displayWidth))
+    const textW = Math.max(...built.map((r) => r.texts.reduce((sum, t) => sum + t.width, 0)))
+    const left = cx - (iconW + ICON_GAP + textW) / 2
+    for (const { icon, texts } of built) {
+      icon.setX(left + iconW / 2)
+      let x = left + iconW + ICON_GAP
+      for (const t of texts) {
+        t.setX(x)
+        x += t.width
+      }
+    }
+    return built.flatMap((r) => [r.icon, ...r.texts])
   }
 
   private addProfileTool() {

@@ -1,7 +1,7 @@
 export const BUFF_COLOR = '#3a7d3a'
 export const NIGHT_COLOR = '#2f5f9e'
 export const ICON_SCALE = 4
-export const ICON_GAP = 8
+export const ICON_GAP = 12
 
 export const COFFEE_LEFT_X = 0.27
 export const COFFEE_RIGHT_X = 0.52
