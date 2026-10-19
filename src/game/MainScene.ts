@@ -13,7 +13,29 @@ import {
   TODO_NUDGE,
   TODO_ORIGIN,
 } from './config/layout'
-import { END_HOLD_MS, OBTAINED_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
+import {
+  BUFF_COLOR,
+  COFFEE_BUFF_ROWS,
+  COFFEE_BUFF_SIZE,
+  COFFEE_BANNER,
+  COFFEE_CTA,
+  COFFEE_FRAME_SLICE,
+  COFFEE_LABEL_SIZE,
+  COFFEE_LEFT_X,
+  COFFEE_RATINGS,
+  COFFEE_STATS_PLATE,
+  COFFEE_RIGHT_X,
+  COFFEE_ROW_HEIGHT,
+  COFFEE_STARS_Y,
+  COFFEE_TUB_SCALE,
+  COFFEE_TUB_Y,
+  ICON_GAP,
+  ICON_SCALE,
+  NIGHT_COLOR,
+} from './config/coffee'
+import { ITEM_COLOR } from './config/dialog'
+import { COFFEE_POPUP, FONT, PALETTE, PROFILE_POPUP } from './config/popup'
+import { END_HOLD_MS, HAND_PROFILE_FPS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
   TOOL_ICONS,
@@ -38,7 +60,10 @@ import {
 } from './config/toolbar'
 import { popThenSettle, TOOL_POP_MS, TOOL_SETTLE_MS } from './effects/easing'
 import { makeHoverable } from './effects/hover'
+import { addBanner } from './Banner'
+import { showDialog } from './Dialog'
 import { showPopup } from './Popup'
+import { addStars } from './Rating'
 
 export class MainScene extends Phaser.Scene {
   private bg!: Phaser.GameObjects.Image
@@ -58,6 +83,7 @@ export class MainScene extends Phaser.Scene {
   private tooltipArrow!: Phaser.GameObjects.Image
   private tooltipHop: Phaser.Time.TimerEvent[] = []
   private toolScale = 1
+  private coffeeObtained = false
 
   constructor() {
     super('main')
@@ -125,13 +151,15 @@ export class MainScene extends Phaser.Scene {
     makeHoverable(this, this.mug, TEXTURE.mug)
     this.mug.on('pointerdown', () => {
       this.removeTodo(1)
-      this.showCoffee()
+      if (this.coffeeObtained) return this.showCoffee()
+      this.coffeeObtained = true
+      this.showObtained('COFFEE', ITEM_COLOR.coffee, () => this.showCoffee())
     })
 
     this.anims.create({
       key: ANIM.handProfile,
       frames: this.anims.generateFrameNumbers(TEXTURE.peterProfile, { start: 0, end: 11 }),
-      frameRate: 8,
+      frameRate: HAND_PROFILE_FPS,
     })
 
     this.anims.create({
@@ -150,7 +178,8 @@ export class MainScene extends Phaser.Scene {
     })
 
     this.person.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM.handProfile, () => {
-      this.time.delayedCall(END_HOLD_MS, () => this.showObtained())
+      this.person.setFrame(0)
+      this.time.delayedCall(END_HOLD_MS, () => this.showObtained("PETER'S PROFILE", ITEM_COLOR.profile, () => this.showProfile()))
     })
 
     this.layout()
@@ -220,23 +249,15 @@ export class MainScene extends Phaser.Scene {
     this.tooltipHop = []
   }
 
-  private showObtained() {
-    this.person.setFrame(0)
-    showPopup(this, {
-      title: "You obtained\nPETER'S PROFILE!",
-      width: 1100,
-      height: 320,
-      autoDismissMs: OBTAINED_MS,
-      onClose: () => this.showProfile(),
-    })
+  private showObtained(item: string, color: string, onClose: () => void) {
+    showDialog(this, { parts: [['You obtained '], [item, color], ['!']], onClose })
   }
 
   private showProfile() {
     showPopup(this, {
       title: 'PETER NGUYEN',
       body: 'Full-Stack Software Engineer\n\nProjects',
-      width: 1300,
-      height: 760,
+      ...PROFILE_POPUP,
       onClose: () => this.addProfileTool(),
     })
   }
@@ -244,11 +265,114 @@ export class MainScene extends Phaser.Scene {
   private showCoffee() {
     showPopup(this, {
       title: 'COFFEE',
-      body: "+25 Energy (or +50 at night).\n\nLove coffee? Let's chat!",
-      width: 1100,
-      height: 520,
+      ...COFFEE_POPUP,
+      content: (container, area) => this.buildCoffeeReview(container, area),
       onClose: () => this.addTool(TEXTURE.coffee, 'Coffee', () => this.showCoffee()),
     })
+  }
+
+  private buildCoffeeReview(container: Phaser.GameObjects.Container, area: Phaser.Geom.Rectangle) {
+    const text = (x: number, y: number, str: string, size: number) =>
+      this.add.text(x, y, str, { fontFamily: FONT, fontSize: `${size}px`, color: PALETTE.text, align: 'center' })
+
+    const leftX = area.x + area.width * COFFEE_LEFT_X
+    const tubY = area.y + COFFEE_TUB_Y
+    const { size: sliceSize, edge } = COFFEE_FRAME_SLICE
+    const frame = this.add
+      .nineslice(leftX, tubY, TEXTURE.inset, undefined, sliceSize, sliceSize, edge, edge, edge, edge)
+      .setScale(COFFEE_TUB_SCALE)
+    const tub = this.add.image(leftX, tubY, TEXTURE.coffeeTub).setScale(COFFEE_TUB_SCALE)
+    const banner = addBanner(
+      this,
+      leftX,
+      area.y + COFFEE_BANNER.y,
+      COFFEE_BANNER.text,
+      COFFEE_BANNER.size,
+      COFFEE_BANNER.lineSpacing,
+      COFFEE_BANNER.scale,
+      COFFEE_BANNER.padX,
+    )
+    const buff = this.statRows(
+      leftX,
+      [
+        { y: area.y + COFFEE_BUFF_ROWS.energy, icon: TEXTURE.energy, parts: [['+15', BUFF_COLOR], [' Energy']] },
+        { y: area.y + COFFEE_BUFF_ROWS.night, icon: TEXTURE.night, parts: [['2x', NIGHT_COLOR], [' at Night']] },
+      ],
+      COFFEE_BUFF_SIZE,
+    )
+    const { slice, scale, padX, padY } = COFFEE_STATS_PLATE
+    const left = Math.min(...buff.map((o) => o.x))
+    const right = Math.max(...buff.map((o) => o.x + o.displayWidth))
+    const plateTop = banner.overlapY
+    const plateBottom = area.y + COFFEE_BUFF_ROWS.night + COFFEE_BUFF_SIZE + padY
+    const plateW = right - left + 2 * padX
+    const plate = this.add
+      .nineslice(
+        (left + right) / 2,
+        (plateTop + plateBottom) / 2,
+        TEXTURE.stats,
+        undefined,
+        plateW / scale,
+        (plateBottom - plateTop) / scale,
+        slice,
+        slice,
+        slice,
+        slice,
+      )
+      .setScale(scale)
+    container.add([frame, tub, plate, ...buff, ...banner.objects])
+
+    const rightX = area.x + area.width * COFFEE_RIGHT_X
+    COFFEE_RATINGS.forEach(([label, value], i) => {
+      const y = area.y + i * COFFEE_ROW_HEIGHT
+      const name = text(rightX, y, label, COFFEE_LABEL_SIZE).setOrigin(0)
+      container.add([name, ...addStars(this, rightX, y + COFFEE_STARS_Y, value)])
+    })
+
+    const cta = this.add
+      .text(
+        rightX + COFFEE_CTA.offsetX,
+        area.y + COFFEE_RATINGS.length * COFFEE_ROW_HEIGHT + COFFEE_CTA.offsetY,
+        COFFEE_CTA.text,
+        {
+          fontFamily: FONT,
+          fontSize: COFFEE_CTA.size,
+          color: PALETTE.edge,
+          backgroundColor: PALETTE.outline,
+          padding: COFFEE_CTA.padding,
+        },
+      )
+      .setOrigin(0.5, 0)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => window.open(TOOL_LINKS[0], '_blank', 'noopener'))
+    container.add(cta)
+  }
+
+  private statRows(
+    cx: number,
+    rows: { y: number; icon: string; parts: [string, string?][] }[],
+    size: number,
+  ) {
+    const built = rows.map((row) => ({
+      icon: this.add.image(0, row.y + size / 2, row.icon).setOrigin(0.5).setScale(ICON_SCALE),
+      texts: row.parts.map(([str, color]) =>
+        this.add
+          .text(0, row.y, str, { fontFamily: FONT, fontSize: `${size}px`, color: color ?? PALETTE.text })
+          .setOrigin(0),
+      ),
+    }))
+    const iconW = Math.max(...built.map((r) => r.icon.displayWidth))
+    const textW = Math.max(...built.map((r) => r.texts.reduce((sum, t) => sum + t.width, 0)))
+    const left = cx - (iconW + ICON_GAP + textW) / 2
+    for (const { icon, texts } of built) {
+      icon.setX(left + iconW / 2)
+      let x = left + iconW + ICON_GAP
+      for (const t of texts) {
+        t.setX(x)
+        x += t.width
+      }
+    }
+    return built.flatMap((r) => [r.icon, ...r.texts])
   }
 
   private addProfileTool() {
