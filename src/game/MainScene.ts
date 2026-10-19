@@ -63,7 +63,7 @@ import {
   TOOLTIP_TEXT_COLOR,
   TOOLTIP_TEXT_Y,
 } from './config/toolbar'
-import { popThenSettle, TOOL_POP_MS, TOOL_SETTLE_MS } from './effects/easing'
+import { TOOL_POP_HOLD_MS, TOOL_POP_SCALE, TOOL_RUMBLE_PX, TOOL_RUMBLE_STEP_MS, TOOL_RUMBLE_X } from './effects/easing'
 import { makeHoverable } from './effects/hover'
 import { addBanner } from './Banner'
 import { showDialog } from './Dialog'
@@ -434,7 +434,7 @@ export class MainScene extends Phaser.Scene {
 
     const ctaX = rightX + COFFEE_CTA.offsetX
     const ctaY = area.y + COFFEE_RATINGS.length * COFFEE_ROW_HEIGHT + COFFEE_CTA.offsetY
-    this.addCta(container, ctaX, ctaY, COFFEE_CTA.text, () => window.open(CONTACT_GMAIL, '_blank', 'noopener'))
+    this.addCta(container, ctaX, ctaY, COFFEE_CTA.text, () => window.open(CONTACT_GMAIL, '_blank', 'noopener'), true)
   }
 
   private addCta(
@@ -517,17 +517,17 @@ export class MainScene extends Phaser.Scene {
     const index = this.toolIcons.length
     if (index >= TOOL_SLOTS || this.toolIcons.some((icon) => icon.texture.key === textureKey)) return
     const slot = this.toolItems[index]
-    const icon = this.add.image(slot.x, slot.y, textureKey).setDepth(1.5).setScale(0)
+    const icon = this.add.image(slot.x, slot.y, textureKey).setDepth(1.5).setScale(this.toolScale * TOOL_POP_SCALE)
     this.toolIcons[index] = icon
     this.toolLabels[index] = label
     slot.input!.cursor = 'pointer'
     slot.on('pointerdown', onClick)
 
-    this.tweens.add({
-      targets: icon,
-      scale: this.toolScale,
-      duration: TOOL_POP_MS + TOOL_SETTLE_MS,
-      ease: popThenSettle,
+    this.time.delayedCall(TOOL_POP_HOLD_MS, () => {
+      icon.setScale(this.toolScale)
+      TOOL_RUMBLE_X.forEach((dx, i) => {
+        this.time.delayedCall(TOOL_RUMBLE_STEP_MS * i, () => icon.setX(slot.x + dx * TOOL_RUMBLE_PX * this.toolScale))
+      })
     })
   }
 
