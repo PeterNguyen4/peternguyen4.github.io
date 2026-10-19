@@ -23,6 +23,5 @@ export const CLOSE_HOVER_MULT = [0.88, 0.82, 0.72]
 export const CLOSE_HOVER_KEY = 'close-button-hover'
 export const CLOSE_OFFSET = { x: -17, y: 3 }
 
-export const OBTAINED_POPUP = { width: 1100, height: 320 }
 export const PROFILE_POPUP = { width: 1300, height: 760 }
 export const COFFEE_POPUP = { width: 1500, height: 760 }

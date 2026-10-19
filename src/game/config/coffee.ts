@@ -8,9 +8,28 @@ export const COFFEE_RIGHT_X = 0.52
 export const COFFEE_TUB_Y = 140
 export const COFFEE_TUB_SCALE = 4
 export const COFFEE_FRAME_SLICE = { size: 60, edge: 2 }
-export const COFFEE_CAPTION = { y: 290, size: 20, lineSpacing: 14, text: 'Kirkland Signature\nColombian Coffee' }
+export const COFFEE_BANNER = {
+  y: 290,
+  text: 'Kirkland Signature\nColombian Coffee',
+  size: '16px',
+  lineSpacing: 4,
+  scale: 4,
+  padX: 6,
+}
+export const BANNER_FRAMES = {
+  left: [0, 0, 19, 18],
+  mid: [21, 0, 1, 16],
+  right: [25, 0, 19, 18],
+  minMid: 6,
+  textInset: 22,
+  textCenterY: 7.5,
+  overlapY: 13,
+  height: 18,
+} as const
 export const COFFEE_BUFF_SIZE = 16
-export const COFFEE_BUFF_ROWS = { energy: 410, night: 452 }
+export const COFFEE_BUFF_ROWS = { energy: 386, night: 428 }
+
+export const COFFEE_STATS_PLATE = { slice: 4, scale: 4, padX: 38, padY: 38}
 
 export const COFFEE_RATINGS: [string, number][] = [
   ['Affordability', 4.5],

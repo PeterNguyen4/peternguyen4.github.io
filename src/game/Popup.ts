@@ -25,7 +25,6 @@ export interface PopupOptions {
   content?: (container: Phaser.GameObjects.Container, area: Phaser.Geom.Rectangle) => void
   width: number
   height: number
-  autoDismissMs?: number
   onClose?: () => void
 }
 
@@ -115,11 +114,9 @@ export function showPopup(scene: Phaser.Scene, opts: PopupOptions) {
   const dismiss = () => {
     if (closed) return
     closed = true
-    timer?.remove()
     container.destroy()
     opts.onClose?.()
   }
-  const timer = opts.autoDismissMs ? scene.time.delayedCall(opts.autoDismissMs, dismiss) : undefined
   dim.once('pointerdown', dismiss)
   close.once('pointerdown', dismiss)
   return dismiss

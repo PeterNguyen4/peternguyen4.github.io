@@ -7,6 +7,10 @@ import linkedin from '../assets/icons/linkedin.png'
 import night from '../assets/icons/night.png'
 import profileIcon from '../assets/icons/profile.png'
 import inset from '../assets/ui/inset.png'
+import banner from '../assets/ui/banner.png'
+import dialogue from '../assets/ui/dialogue.png'
+import termination from '../assets/ui/termination.png'
+import stats from '../assets/ui/stats.png'
 import closeButton from '../assets/ui/nine-slice-close-btn.png'
 import panel from '../assets/ui/nine-slice.png'
 import toolItemFocus from '../assets/ui/tool-item-focus.png'
@@ -23,6 +27,8 @@ import steamSheet from '../assets/sprites/coffee-steam-spritesheet.png'
 
 export const TEXTURE = {
   arrow: 'arrow',
+  banner: 'banner',
+  dialogue: 'dialogue',
   background: 'background',
   closeButton: 'close-button',
   coffee: 'coffee',
@@ -39,7 +45,9 @@ export const TEXTURE = {
   papers: 'papers',
   peterProfile: 'peter-profile',
   star: 'star',
+  stats: 'stats',
   steam: 'steam',
+  termination: 'termination',
   todo: 'todo',
   toolItem: 'tool-item',
   toolItemFocus: 'tool-item-focus',
@@ -53,6 +61,8 @@ export const ANIM = {
 
 export const IMAGES = {
   [TEXTURE.arrow]: arrow,
+  [TEXTURE.banner]: banner,
+  [TEXTURE.dialogue]: dialogue,
   [TEXTURE.background]: background,
   [TEXTURE.closeButton]: closeButton,
   [TEXTURE.coffee]: coffee,
@@ -68,6 +78,8 @@ export const IMAGES = {
   [TEXTURE.night]: night,
   [TEXTURE.papers]: papers,
   [TEXTURE.star]: star,
+  [TEXTURE.stats]: stats,
+  [TEXTURE.termination]: termination,
   [TEXTURE.todo]: todo,
   [TEXTURE.toolItem]: toolItem,
   [TEXTURE.toolItemFocus]: toolItemFocus,

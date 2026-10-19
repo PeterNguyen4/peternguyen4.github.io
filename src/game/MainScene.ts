@@ -17,12 +17,13 @@ import {
   BUFF_COLOR,
   COFFEE_BUFF_ROWS,
   COFFEE_BUFF_SIZE,
-  COFFEE_CAPTION,
+  COFFEE_BANNER,
   COFFEE_CTA,
   COFFEE_FRAME_SLICE,
   COFFEE_LABEL_SIZE,
   COFFEE_LEFT_X,
   COFFEE_RATINGS,
+  COFFEE_STATS_PLATE,
   COFFEE_RIGHT_X,
   COFFEE_ROW_HEIGHT,
   COFFEE_STARS_Y,
@@ -32,8 +33,9 @@ import {
   ICON_SCALE,
   NIGHT_COLOR,
 } from './config/coffee'
-import { COFFEE_POPUP, FONT, OBTAINED_POPUP, PALETTE, PROFILE_POPUP } from './config/popup'
-import { END_HOLD_MS, HAND_PROFILE_FPS, OBTAINED_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
+import { ITEM_COLOR } from './config/dialog'
+import { COFFEE_POPUP, FONT, PALETTE, PROFILE_POPUP } from './config/popup'
+import { END_HOLD_MS, HAND_PROFILE_FPS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
   TOOL_ICONS,
@@ -58,6 +60,8 @@ import {
 } from './config/toolbar'
 import { popThenSettle, TOOL_POP_MS, TOOL_SETTLE_MS } from './effects/easing'
 import { makeHoverable } from './effects/hover'
+import { addBanner } from './Banner'
+import { showDialog } from './Dialog'
 import { showPopup } from './Popup'
 import { addStars } from './Rating'
 
@@ -79,6 +83,7 @@ export class MainScene extends Phaser.Scene {
   private tooltipArrow!: Phaser.GameObjects.Image
   private tooltipHop: Phaser.Time.TimerEvent[] = []
   private toolScale = 1
+  private coffeeObtained = false
 
   constructor() {
     super('main')
@@ -146,7 +151,9 @@ export class MainScene extends Phaser.Scene {
     makeHoverable(this, this.mug, TEXTURE.mug)
     this.mug.on('pointerdown', () => {
       this.removeTodo(1)
-      this.showCoffee()
+      if (this.coffeeObtained) return this.showCoffee()
+      this.coffeeObtained = true
+      this.showObtained('COFFEE', ITEM_COLOR.coffee, () => this.showCoffee())
     })
 
     this.anims.create({
@@ -171,7 +178,8 @@ export class MainScene extends Phaser.Scene {
     })
 
     this.person.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM.handProfile, () => {
-      this.time.delayedCall(END_HOLD_MS, () => this.showObtained())
+      this.person.setFrame(0)
+      this.time.delayedCall(END_HOLD_MS, () => this.showObtained("PETER'S PROFILE", ITEM_COLOR.profile, () => this.showProfile()))
     })
 
     this.layout()
@@ -241,14 +249,8 @@ export class MainScene extends Phaser.Scene {
     this.tooltipHop = []
   }
 
-  private showObtained() {
-    this.person.setFrame(0)
-    showPopup(this, {
-      title: "You obtained\nPETER'S PROFILE!",
-      ...OBTAINED_POPUP,
-      autoDismissMs: OBTAINED_MS,
-      onClose: () => this.showProfile(),
-    })
+  private showObtained(item: string, color: string, onClose: () => void) {
+    showDialog(this, { parts: [['You obtained '], [item, color], ['!']], onClose })
   }
 
   private showProfile() {
@@ -280,9 +282,16 @@ export class MainScene extends Phaser.Scene {
       .nineslice(leftX, tubY, TEXTURE.inset, undefined, sliceSize, sliceSize, edge, edge, edge, edge)
       .setScale(COFFEE_TUB_SCALE)
     const tub = this.add.image(leftX, tubY, TEXTURE.coffeeTub).setScale(COFFEE_TUB_SCALE)
-    const caption = text(leftX, area.y + COFFEE_CAPTION.y, COFFEE_CAPTION.text, COFFEE_CAPTION.size)
-      .setOrigin(0.5, 0)
-      .setLineSpacing(COFFEE_CAPTION.lineSpacing)
+    const banner = addBanner(
+      this,
+      leftX,
+      area.y + COFFEE_BANNER.y,
+      COFFEE_BANNER.text,
+      COFFEE_BANNER.size,
+      COFFEE_BANNER.lineSpacing,
+      COFFEE_BANNER.scale,
+      COFFEE_BANNER.padX,
+    )
     const buff = [
       ...this.coloredLine(
         leftX,
@@ -297,7 +306,27 @@ export class MainScene extends Phaser.Scene {
         COFFEE_BUFF_SIZE,
       ),
     ]
-    container.add([frame, tub, caption, ...buff])
+    const { slice, scale, padX, padY } = COFFEE_STATS_PLATE
+    const left = Math.min(...buff.map((o) => o.x))
+    const right = Math.max(...buff.map((o) => o.x + o.displayWidth))
+    const plateTop = banner.overlapY
+    const plateBottom = area.y + COFFEE_BUFF_ROWS.night + COFFEE_BUFF_SIZE + padY
+    const plateW = right - left + 2 * padX
+    const plate = this.add
+      .nineslice(
+        (left + right) / 2,
+        (plateTop + plateBottom) / 2,
+        TEXTURE.stats,
+        undefined,
+        plateW / scale,
+        (plateBottom - plateTop) / scale,
+        slice,
+        slice,
+        slice,
+        slice,
+      )
+      .setScale(scale)
+    container.add([frame, tub, plate, ...buff, ...banner.objects])
 
     const rightX = area.x + area.width * COFFEE_RIGHT_X
     COFFEE_RATINGS.forEach(([label, value], i) => {
@@ -325,7 +354,6 @@ export class MainScene extends Phaser.Scene {
     container.add(cta)
   }
 
-  /** Centered single line of colored text segments and inline icons. */
   private coloredLine(cx: number, y: number, parts: ([string, string?] | { icon: string })[], size: number) {
     const objs = parts.map((part) =>
       'icon' in part
