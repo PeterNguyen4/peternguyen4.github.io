@@ -1,11 +1,16 @@
 import background from '../assets/backgrounds/background.png'
 import arrow from '../assets/icons/arrow-up-right.png'
 import coffee from '../assets/icons/coffee.png'
+import coffeeBeanBullet from '../assets/ui/coffee-bean-bullet.png'
 import energy from '../assets/icons/energy.png'
+import erwix from '../assets/icons/erwix.png'
 import github from '../assets/icons/github.png'
 import linkedin from '../assets/icons/linkedin.png'
 import night from '../assets/icons/night.png'
+import postgresql from '../assets/icons/postgresql.png'
 import profileIcon from '../assets/icons/profile.png'
+import python from '../assets/icons/python.png'
+import typescript from '../assets/icons/typescript.png'
 import buttonBase from '../assets/ui/button-base.png'
 import buttonHover from '../assets/ui/button-hover.png'
 import buttonClick from '../assets/ui/button-click.png'
@@ -38,18 +43,22 @@ export const TEXTURE = {
   background: 'background',
   closeButton: 'close-button',
   coffee: 'coffee',
+  coffeeBean: 'coffee-bean',
   coffeeTub: 'coffee-tub',
   counter: 'counter',
   energy: 'energy',
+  erwix: 'erwix',
   github: 'github',
   inset: 'inset',
   linkedin: 'linkedin',
   mug: 'mug',
   night: 'night',
   panel: 'panel',
+  postgresql: 'postgresql',
   profileIcon: 'profile-icon',
   papers: 'papers',
   peterProfile: 'peter-profile',
+  python: 'python',
   star: 'star',
   stats: 'stats',
   steam: 'steam',
@@ -58,6 +67,7 @@ export const TEXTURE = {
   toolItem: 'tool-item',
   toolItemFocus: 'tool-item-focus',
   tooltip: 'tooltip',
+  typescript: 'typescript',
 } as const
 
 export const ANIM = {
@@ -75,11 +85,15 @@ export const IMAGES = {
   [TEXTURE.background]: background,
   [TEXTURE.closeButton]: closeButton,
   [TEXTURE.coffee]: coffee,
+  [TEXTURE.coffeeBean]: coffeeBeanBullet,
   [TEXTURE.coffeeTub]: coffeeTub,
   [TEXTURE.panel]: panel,
+  [TEXTURE.postgresql]: postgresql,
+  [TEXTURE.python]: python,
   [TEXTURE.profileIcon]: profileIcon,
   [TEXTURE.counter]: counter,
   [TEXTURE.energy]: energy,
+  [TEXTURE.erwix]: erwix,
   [TEXTURE.github]: github,
   [TEXTURE.inset]: inset,
   [TEXTURE.linkedin]: linkedin,
@@ -93,6 +107,7 @@ export const IMAGES = {
   [TEXTURE.toolItem]: toolItem,
   [TEXTURE.toolItemFocus]: toolItemFocus,
   [TEXTURE.tooltip]: tooltip,
+  [TEXTURE.typescript]: typescript,
 } as const
 
 export const SPRITESHEETS = {

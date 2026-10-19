@@ -23,6 +23,7 @@ export function addBanner(
   lineSpacing: number,
   scale: number,
   padX: number,
+  minWidth = 0,
 ) {
   ensureBannerFrames(scene)
   const text = scene.add
@@ -34,7 +35,11 @@ export function addBanner(
       lineSpacing,
     })
     .setOrigin(0.5)
-  const midW = Math.max(F.minMid, Math.ceil(text.width / scale) - F.textInset + 2 * padX)
+  const midW = Math.max(
+    F.minMid,
+    Math.ceil(text.width / scale) - F.textInset + 2 * padX,
+    Math.ceil(minWidth / scale) - F.left[2] - F.right[2],
+  )
   const x0 = cx - ((F.left[2] + midW + F.right[2]) * scale) / 2
   const add = (frame: string, nativeX: number) =>
     scene.add.image(x0 + nativeX * scale, top, TEXTURE.banner, frame).setOrigin(0)

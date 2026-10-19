@@ -18,6 +18,11 @@ import {
   COFFEE_BUFF_ROWS,
   COFFEE_BUFF_SIZE,
   COFFEE_BANNER,
+  CTA_ARROW_GAP,
+  CTA_ARROW_TINT,
+  CONTACT_GMAIL,
+  ERWIX_FALLBACK_URL,
+  ERWIX_URL,
   COFFEE_CTA,
   COFFEE_FRAME_SLICE,
   COFFEE_LABEL_SIZE,
@@ -34,7 +39,7 @@ import {
   NIGHT_COLOR,
 } from './config/coffee'
 import { ITEM_COLOR } from './config/dialog'
-import { COFFEE_POPUP, FONT, PALETTE, PROFILE_POPUP } from './config/popup'
+import { COFFEE_POPUP, FONT, PALETTE, PANEL_SCALE, PANEL_SLICE, POPUP_WRAP_PAD, POPUP_BODY_SIZE, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
 import { END_HOLD_MS, HAND_PROFILE_FPS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
@@ -64,6 +69,18 @@ import { addBanner } from './Banner'
 import { showDialog } from './Dialog'
 import { showPopup } from './Popup'
 import { addStars } from './Rating'
+
+function openWithFallback(url: string, fallback: string) {
+  const tab = window.open('', '_blank')
+  if (!tab) return
+  tab.opener = null
+  const timeout = new AbortController()
+  const timer = setTimeout(() => timeout.abort(), 4000)
+  fetch(url, { mode: 'no-cors', signal: timeout.signal })
+    .then(() => (tab.location.href = url))
+    .catch(() => (tab.location.href = fallback))
+    .finally(() => clearTimeout(timer))
+}
 
 export class MainScene extends Phaser.Scene {
   private bg!: Phaser.GameObjects.Image
@@ -258,10 +275,94 @@ export class MainScene extends Phaser.Scene {
   private showProfile() {
     showPopup(this, {
       title: 'PETER NGUYEN',
-      body: 'Full-Stack Software Engineer\n\nProjects',
       ...PROFILE_POPUP,
+      content: (container, area) => this.buildProfile(container, area),
       onClose: () => this.addProfileTool(),
     })
+  }
+
+  private buildProfile(container: Phaser.GameObjects.Container, area: Phaser.Geom.Rectangle) {
+    const P = PROFILE_LAYOUT
+    const left = area.x + PANEL_SLICE * PANEL_SCALE + POPUP_WRAP_PAD / 2
+    const text = (x: number, y: number, str: string, size: string, color: string = PALETTE.text) =>
+      this.add.text(x, y, str, { fontFamily: FONT, fontSize: size, color }).setOrigin(0, 0.5)
+
+    container.add(text(left, area.y + P.headingY, 'Full-Stack Software Engineer', POPUP_BODY_SIZE, P.headingColor))
+
+    let x = left
+    const skills: [string, string][] = [
+      [TEXTURE.python, 'Python'],
+      [TEXTURE.typescript, 'TypeScript'],
+      [TEXTURE.postgresql, 'PostgreSQL'],
+    ]
+    for (const [texture, label] of skills) {
+      const icon = this.add.image(x, area.y + P.skillsY, texture).setOrigin(0, 0.5).setScale(P.iconScale)
+      const name = text(x + icon.displayWidth + P.iconGap, area.y + P.skillsY, label, P.skillSize)
+      container.add([icon, name])
+      x = name.x + name.width + P.skillGap
+    }
+
+    container.add(text(left, area.y + P.projectsY, 'Projects', POPUP_BODY_SIZE, P.headingColor))
+
+    const { edge } = COFFEE_FRAME_SLICE
+    const frameTop = area.y + P.rowY
+    const frameW = P.frameNative.w * P.frameScale
+    const frameH = P.frameNative.h * P.frameScale
+    const frame = this.add
+      .nineslice(left + frameW / 2, frameTop + frameH / 2, TEXTURE.inset, undefined, P.frameNative.w, P.frameNative.h, edge, edge, edge, edge)
+      .setScale(P.frameScale)
+    const shot = this.add.image(left + frameW / 2, frameTop + frameH / 2, TEXTURE.erwix).setScale(P.frameScale)
+    container.add([frame, shot])
+
+    const cx = left + frameW + P.columnGap + P.bannerWidth / 2
+    const banner = addBanner(
+      this,
+      cx,
+      frameTop,
+      P.title,
+      COFFEE_BANNER.size,
+      COFFEE_BANNER.lineSpacing,
+      COFFEE_BANNER.scale,
+      COFFEE_BANNER.padX,
+      P.bannerWidth,
+    )
+    const bulletLeft = cx - P.plateWidth / 2 + P.platePadX
+    let y = banner.overlapY + P.bulletsOffsetY
+    const bullets = P.bullets.map((str) => {
+      const bean = this.add.image(bulletLeft, y, TEXTURE.coffeeBean).setOrigin(0).setScale(P.bulletScale)
+      const textX = bulletLeft + bean.displayWidth + P.bulletGap
+      const label = this.add
+        .text(textX, y, str, {
+          fontFamily: FONT,
+          fontSize: P.bulletTextSize,
+          color: PALETTE.text,
+          lineSpacing: P.bulletLineSpacing,
+          wordWrap: { width: P.plateWidth - 2 * P.platePadX - bean.displayWidth - P.bulletGap },
+        })
+        .setOrigin(0)
+      const rowH = Math.max(label.height, bean.displayHeight)
+      bean.y = y + (rowH - bean.displayHeight) / 2
+      label.y = y + (rowH - label.height) / 2
+      y += rowH + P.bulletRowGap
+      return [bean, label]
+    })
+    const { slice, scale } = COFFEE_STATS_PLATE
+    const plateTop = banner.overlapY
+    const plateBottom = y - P.bulletRowGap + P.plateBottomPad
+    const plateW = P.plateWidth
+    const plate = this.add
+      .nineslice(cx, (plateTop + plateBottom) / 2, TEXTURE.stats, undefined, plateW / scale, (plateBottom - plateTop) / scale, slice, slice, slice, slice)
+      .setScale(scale)
+    container.add([plate, ...bullets.flat(), ...banner.objects])
+
+    this.addCta(
+      container,
+      cx,
+      plateBottom + P.ctaGap,
+      'VIEW',
+      () => openWithFallback(ERWIX_URL, ERWIX_FALLBACK_URL),
+      true,
+    )
   }
 
   private showCoffee() {
@@ -331,23 +432,42 @@ export class MainScene extends Phaser.Scene {
       container.add([name, ...addStars(this, rightX, y + COFFEE_STARS_Y, value)])
     })
 
-    const { scale: btnScale, edge: btnEdge, padding, pressDepth } = COFFEE_CTA
     const ctaX = rightX + COFFEE_CTA.offsetX
     const ctaY = area.y + COFFEE_RATINGS.length * COFFEE_ROW_HEIGHT + COFFEE_CTA.offsetY
+    this.addCta(container, ctaX, ctaY, COFFEE_CTA.text, () => window.open(CONTACT_GMAIL, '_blank', 'noopener'))
+  }
+
+  private addCta(
+    container: Phaser.GameObjects.Container,
+    cx: number,
+    top: number,
+    text: string,
+    onClick: () => void,
+    withArrow = false,
+  ) {
+    const { scale: btnScale, edge: btnEdge, padding, pressDepth } = COFFEE_CTA
     const label = this.add
-      .text(0, 0, COFFEE_CTA.text, { fontFamily: FONT, fontSize: COFFEE_CTA.size, color: PALETTE.edge })
+      .text(0, 0, text, { fontFamily: FONT, fontSize: COFFEE_CTA.size, color: PALETTE.edge })
       .setOrigin(0.5)
-    const btnW = (label.width + padding.x * 2) / btnScale
+    const arrow = withArrow
+      ? this.add.image(0, 0, TEXTURE.arrow).setOrigin(0.5).setScale(btnScale).setTint(CTA_ARROW_TINT)
+      : undefined
+    const arrowW = arrow ? CTA_ARROW_GAP + arrow.displayWidth : 0
+    const contentW = label.width + arrowW
+    label.x = -contentW / 2 + label.width / 2
+    arrow?.setX(contentW / 2 - arrow.displayWidth / 2)
+    const btnW = (contentW + padding.x * 2) / btnScale
     const btnH = (label.height + padding.y * 2) / btnScale
     const button = this.add
       .nineslice(0, 0, TEXTURE.button, undefined, btnW, btnH, btnEdge, btnEdge, btnEdge, btnEdge)
       .setScale(btnScale)
-    const cta = this.add.container(ctaX, ctaY + (btnH * btnScale) / 2, [button, label])
-    const restLabelY = label.y + COFFEE_CTA.labelOffsetY
-    label.y = restLabelY
+    const face = arrow ? [label, arrow] : [label]
+    const cta = this.add.container(cx, top + (btnH * btnScale) / 2, [button, ...face])
+    const restY = COFFEE_CTA.labelOffsetY
+    face.forEach((o) => (o.y = restY))
     const setState = (texture: string, pressed: boolean) => {
       button.setTexture(texture)
-      label.y = restLabelY + (pressed ? pressDepth * btnScale : 0)
+      face.forEach((o) => (o.y = restY + (pressed ? pressDepth * btnScale : 0)))
     }
     cta
       .setSize(btnW * btnScale, btnH * btnScale)
@@ -357,7 +477,7 @@ export class MainScene extends Phaser.Scene {
       .on('pointerdown', () => setState(TEXTURE.buttonClick, true))
       .on('pointerup', () => {
         setState(TEXTURE.buttonHover, false)
-        window.open(TOOL_LINKS[0], '_blank', 'noopener')
+        onClick()
       })
     container.add(cta)
   }

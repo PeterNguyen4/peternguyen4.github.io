@@ -42,3 +42,8 @@ export const COFFEE_LABEL_SIZE = 20
 export const COFFEE_STARS_Y = 56
 
 export const COFFEE_CTA = { text: "LET'S CHAT", size: '24px', padding: { x: 28, y: 28 }, labelOffsetY: -2, offsetX: 160, offsetY: 30, scale: 4, edge: 5, pressDepth: 1 }
+export const CTA_ARROW_GAP = 12
+export const CTA_ARROW_TINT = 0xd9bf8c
+export const ERWIX_URL = 'https://erwix.net/'
+export const ERWIX_FALLBACK_URL = 'https://github.com/PeterNguyen4/Erwix'
+export const CONTACT_GMAIL = 'https://mail.google.com/mail/?view=cm&fs=1&to=peternguyen644@gmail.com&su=Hello%20Peter'
