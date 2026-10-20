@@ -26,6 +26,7 @@ import star from '../assets/icons/star.png'
 import todo from '../assets/icons/todo.png'
 import toolItem from '../assets/ui/tool-item.png'
 import tooltip from '../assets/ui/tooltip.png'
+import coffeeMachine from '../assets/props/coffee-machine.png'
 import coffeeTub from '../assets/props/coffee-tub.png'
 import counter from '../assets/props/counter.png'
 import mug from '../assets/props/mug.png'
@@ -44,6 +45,7 @@ export const TEXTURE = {
   closeButton: 'close-button',
   coffee: 'coffee',
   coffeeBean: 'coffee-bean',
+  coffeeMachine: 'coffee-machine',
   coffeeTub: 'coffee-tub',
   counter: 'counter',
   energy: 'energy',
@@ -86,6 +88,7 @@ export const IMAGES = {
   [TEXTURE.closeButton]: closeButton,
   [TEXTURE.coffee]: coffee,
   [TEXTURE.coffeeBean]: coffeeBeanBullet,
+  [TEXTURE.coffeeMachine]: coffeeMachine,
   [TEXTURE.coffeeTub]: coffeeTub,
   [TEXTURE.panel]: panel,
   [TEXTURE.postgresql]: postgresql,

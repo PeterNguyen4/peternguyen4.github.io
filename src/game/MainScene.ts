@@ -3,6 +3,9 @@ import { ANIM, IMAGES, SPRITESHEETS, TEXTURE } from './assets'
 import {
   BG_SCALE,
   COUNTER_DROP,
+  MACHINE_OFFSET,
+  MACHINE_ORIGIN,
+  MACHINE_SCALE,
   MUG_OFFSET,
   PERSON_HEIGHT,
   PERSON_POS,
@@ -63,7 +66,7 @@ import {
   TOOLTIP_TEXT_COLOR,
   TOOLTIP_TEXT_Y,
 } from './config/toolbar'
-import { TOOL_POP_HOLD_MS, TOOL_POP_SCALE, TOOL_RUMBLE_PX, TOOL_RUMBLE_STEP_MS, TOOL_RUMBLE_X } from './effects/easing'
+import { TOOL_GLOW_DELAY_MS, TOOL_GLOW_MS, TOOL_POP_HOLD_MS, TOOL_POP_SCALE, TOOL_RUMBLE_PX, TOOL_RUMBLE_STEP_MS, TOOL_RUMBLE_X } from './effects/easing'
 import { makeHoverable } from './effects/hover'
 import { addBanner } from './Banner'
 import { showDialog } from './Dialog'
@@ -88,6 +91,7 @@ export class MainScene extends Phaser.Scene {
   private person!: Phaser.GameObjects.Sprite
   private profiles!: Phaser.GameObjects.Image
   private mug!: Phaser.GameObjects.Image
+  private machine!: Phaser.GameObjects.Image
   private steam!: Phaser.GameObjects.Sprite
   private todos!: { icon: Phaser.GameObjects.Image; baseY: number }[]
   private toolItems: Phaser.GameObjects.Image[] = []
@@ -119,6 +123,10 @@ export class MainScene extends Phaser.Scene {
     this.counter = this.add.image(0, 0, TEXTURE.counter).setOrigin(0.5, 1).setDepth(2)
     this.profiles = this.add.image(0, 0, TEXTURE.papers).setDepth(3)
     this.mug = this.add.image(0, 0, TEXTURE.mug).setDepth(3)
+    this.machine = this.add
+      .image(0, 0, TEXTURE.coffeeMachine)
+      .setOrigin(MACHINE_ORIGIN.x, MACHINE_ORIGIN.y)
+      .setDepth(3)
     this.steam = this.add
       .sprite(0, 0, TEXTURE.steam, 0)
       .setOrigin(0.5, 1)
@@ -528,6 +536,10 @@ export class MainScene extends Phaser.Scene {
       TOOL_RUMBLE_X.forEach((dx, i) => {
         this.time.delayedCall(TOOL_RUMBLE_STEP_MS * i, () => icon.setX(slot.x + dx * TOOL_RUMBLE_PX * this.toolScale))
       })
+      this.time.delayedCall(TOOL_RUMBLE_STEP_MS * TOOL_RUMBLE_X.length + TOOL_GLOW_DELAY_MS, () => {
+        slot.setTexture(TEXTURE.toolItemFocus)
+        this.time.delayedCall(TOOL_GLOW_MS, () => slot.setTexture(TEXTURE.toolItem))
+      })
     })
   }
 
@@ -558,6 +570,10 @@ export class MainScene extends Phaser.Scene {
         this.profiles.x + MUG_OFFSET.x * this.profiles.displayWidth,
         this.profiles.y + MUG_OFFSET.y * this.profiles.displayHeight,
       )
+
+    this.machine
+      .setScale(s * MACHINE_SCALE)
+      .setPosition(this.mug.x + MACHINE_OFFSET.x * s, this.mug.y + MACHINE_OFFSET.y * s)
 
     this.steam
       .setScale(s)
