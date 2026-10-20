@@ -1,12 +1,16 @@
 import Phaser from 'phaser'
 import { TEXTURE } from './assets'
-import { BANNER_FRAMES as F } from './config/coffee'
+import { BANNER_FRAMES, BANNER_TALL_FRAMES } from './config/coffee'
 import { FONT, PALETTE } from './config/popup'
 
 const FRAME_KEYS = ['left', 'mid', 'right'] as const
 
-function ensureBannerFrames(scene: Phaser.Scene) {
-  const tex = scene.textures.get(TEXTURE.banner)
+export type BannerStyle = { texture: string; frames: typeof BANNER_FRAMES | typeof BANNER_TALL_FRAMES }
+export const BANNER_STYLE: BannerStyle = { texture: TEXTURE.banner, frames: BANNER_FRAMES }
+export const BANNER_TALL_STYLE: BannerStyle = { texture: TEXTURE.bannerTall, frames: BANNER_TALL_FRAMES }
+
+function ensureBannerFrames(scene: Phaser.Scene, { texture, frames: F }: BannerStyle) {
+  const tex = scene.textures.get(texture)
   for (const key of FRAME_KEYS) {
     if (tex.has(key)) continue
     const [x, y, w, h] = F[key]
@@ -24,8 +28,10 @@ export function addBanner(
   scale: number,
   padX: number,
   minWidth = 0,
+  style: BannerStyle = BANNER_STYLE,
 ) {
-  ensureBannerFrames(scene)
+  const F = style.frames
+  ensureBannerFrames(scene, style)
   const text = scene.add
     .text(cx, top + F.textCenterY * scale, label, {
       fontFamily: FONT,
@@ -42,7 +48,7 @@ export function addBanner(
   )
   const x0 = cx - ((F.left[2] + midW + F.right[2]) * scale) / 2
   const add = (frame: string, nativeX: number) =>
-    scene.add.image(x0 + nativeX * scale, top, TEXTURE.banner, frame).setOrigin(0)
+    scene.add.image(x0 + nativeX * scale, top, style.texture, frame).setOrigin(0)
 
   const mid = add('mid', F.left[2]).setScale(midW * scale, scale)
   const left = add('left', 0).setScale(scale)

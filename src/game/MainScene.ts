@@ -20,6 +20,7 @@ import {
   BUFF_COLOR,
   COFFEE_BUFF_ROWS,
   COFFEE_BUFF_SIZE,
+  COFFEE_BUFF_TEXT_SIZE,
   COFFEE_BANNER,
   CTA_ARROW_GAP,
   CTA_ARROW_TINT,
@@ -68,7 +69,7 @@ import {
 } from './config/toolbar'
 import { TOOL_GLOW_DELAY_MS, TOOL_GLOW_MS, TOOL_POP_HOLD_MS, TOOL_POP_SCALE, TOOL_RUMBLE_PX, TOOL_RUMBLE_STEP_MS, TOOL_RUMBLE_X } from './effects/easing'
 import { makeHoverable } from './effects/hover'
-import { addBanner } from './Banner'
+import { addBanner, BANNER_TALL_STYLE } from './Banner'
 import { showDialog } from './Dialog'
 import { showPopup } from './Popup'
 import { addStars } from './Rating'
@@ -402,6 +403,8 @@ export class MainScene extends Phaser.Scene {
       COFFEE_BANNER.lineSpacing,
       COFFEE_BANNER.scale,
       COFFEE_BANNER.padX,
+      0,
+      BANNER_TALL_STYLE,
     )
     const buff = this.statRows(
       leftX,
@@ -410,6 +413,7 @@ export class MainScene extends Phaser.Scene {
         { y: area.y + COFFEE_BUFF_ROWS.night, icon: TEXTURE.night, parts: [['2x', NIGHT_COLOR], [' at Night']] },
       ],
       COFFEE_BUFF_SIZE,
+      COFFEE_BUFF_TEXT_SIZE,
     )
     const { slice, scale, padLeft, padRight, padY } = COFFEE_STATS_PLATE
     const left = Math.min(...buff.map((o) => o.x))
@@ -494,12 +498,13 @@ export class MainScene extends Phaser.Scene {
     cx: number,
     rows: { y: number; icon: string; parts: [string, string?][] }[],
     size: number,
+    textSize: number,
   ) {
     const built = rows.map((row) => ({
       icon: this.add.image(0, row.y + size / 2, row.icon).setOrigin(0.5).setScale(ICON_SCALE),
       texts: row.parts.map(([str, color]) =>
         this.add
-          .text(0, row.y, str, { fontFamily: FONT, fontSize: `${size}px`, color: color ?? PALETTE.text })
+          .text(0, row.y, str, { fontFamily: FONT, fontSize: `${textSize}px`, color: color ?? PALETTE.text })
           .setOrigin(0),
       ),
     }))
