@@ -66,6 +66,33 @@
 body {
   margin: 0;
   overflow: hidden;
+  background: #2a1a10;
+}
+
+.game-frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #2a1a10;
+}
+
+.game-frame-fill {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(28px) brightness(0.55) saturate(1.1);
+  transform: scale(1.15); /* hides blur's faded edges */
+}
+
+.game-frame-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.game-frame-canvas canvas {
+  box-shadow: 0 0 60px 24px rgba(20, 10, 4, 0.55);
 }
 
 * {

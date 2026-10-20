@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { useEffect, useRef } from 'react'
 import { MainScene } from './MainScene'
+import background from '../assets/backgrounds/background.png'
 
 export function PhaserGame() {
   const parent = useRef<HTMLDivElement>(null)
@@ -14,7 +15,7 @@ export function PhaserGame() {
         type: Phaser.AUTO,
         parent: parent.current!,
         pixelArt: true,
-        backgroundColor: '#000',
+        backgroundColor: '#2a1a10',
         scale: {
           mode: Phaser.Scale.FIT,
           autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -30,5 +31,10 @@ export function PhaserGame() {
     }
   }, [])
 
-  return <div ref={parent} style={{ flex: 1, minHeight: 0, overflow: 'hidden', background: '#000' }} />
+  return (
+    <div className="game-frame">
+      <div className="game-frame-fill" style={{ backgroundImage: `url(${background})` }} />
+      <div ref={parent} className="game-frame-canvas" />
+    </div>
+  )
 }
