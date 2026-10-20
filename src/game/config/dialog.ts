@@ -1,7 +1,7 @@
 export const DIALOG_WIDTH = 0.8
 export const DIALOG_HEIGHT = 240
 export const DIALOG_BOTTOM_MARGIN = 40
-export const DIALOG_TEXT_SIZE = '32px'
+export const DIALOG_TEXT_SIZE = '40px'
 export const DIALOG_TEXT_PAD = { x: 64, y: 48 }
 export const DIALOG_ARROW = { scale: 4, right: 72, bottom: 48, bobMs: 500 }
 export const DIALOG_TEXT_COLOR = '#e0e0dd'

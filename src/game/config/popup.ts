@@ -1,4 +1,4 @@
-export const FONT = '"Press Start 2P", monospace'
+export const FONT = '"FS Pixel Sans", monospace'
 
 export const PALETTE = {
   outline: '#5a3d22',
@@ -11,9 +11,9 @@ export const PANEL_SLICE = 10
 export const PANEL_SCALE = 4
 export const POPUP_DEPTH = 100
 export const POPUP_DIM_ALPHA = 0.5
-export const POPUP_TITLE_SIZE = '32px'
+export const POPUP_TITLE_SIZE = '40px'
 export const POPUP_TITLE_TOP = 80
-export const POPUP_BODY_SIZE = '20px'
+export const POPUP_BODY_SIZE = '24px'
 export const POPUP_BODY_LINE_SPACING = 14
 export const POPUP_CONTENT_GAP = 40
 export const POPUP_WRAP_PAD = 32
@@ -32,7 +32,7 @@ export const PROFILE_LAYOUT = {
   rowY: 215,
   iconScale: 4,
   iconGap: 16,
-  skillSize: '20px',
+  skillSize: '24px',
   skillGap: 56,
   frameNative: { w: 100, h: 80 },
   frameScale: 4,
@@ -45,10 +45,10 @@ export const PROFILE_LAYOUT = {
   bulletGap: 16,
   bulletRowGap: 20,
   bulletLineSpacing: 6,
-  bulletTextSize: '16px',
+  bulletTextSize: '20px',
   bulletsOffsetY: 36,
   platePadX: 48,
   plateBottomPad: 40,
   ctaGap: 20,
 } as const
-export const COFFEE_POPUP = { width: 1500, height: 760 }
+export const COFFEE_POPUP = { width: 1500, height: 810 }

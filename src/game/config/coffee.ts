@@ -11,10 +11,10 @@ export const COFFEE_FRAME_SLICE = { size: 60, edge: 2 }
 export const COFFEE_BANNER = {
   y: 290,
   text: 'Kirkland Signature\nColombian Coffee',
-  size: '16px',
+  size: '28px',
   lineSpacing: 4,
   scale: 4,
-  padX: 6,
+  padX: 10,
 }
 export const BANNER_FRAMES = {
   left: [0, 0, 19, 18],
@@ -26,10 +26,21 @@ export const BANNER_FRAMES = {
   overlapY: 13,
   height: 18,
 } as const
+export const BANNER_TALL_FRAMES = {
+  left: [0, 0, 22, 26],
+  mid: [24, 0, 1, 24],
+  right: [28, 0, 22, 26],
+  minMid: 6,
+  textInset: 22,
+  textCenterY: 11.5,
+  overlapY: 21,
+  height: 26,
+} as const
 export const COFFEE_BUFF_SIZE = 16
-export const COFFEE_BUFF_ROWS = { energy: 386, night: 428 }
+export const COFFEE_BUFF_TEXT_SIZE = 24
+export const COFFEE_BUFF_ROWS = { energy: 416, night: 464 }
 
-export const COFFEE_STATS_PLATE = { slice: 4, scale: 4, padLeft: 58, padRight: 34, padY: 38 }
+export const COFFEE_STATS_PLATE = { slice: 4, scale: 4, padLeft: 80, padRight: 60, padY: 48 }
 
 export const COFFEE_RATINGS: [string, number][] = [
   ['Affordability', 4.5],
@@ -38,10 +49,10 @@ export const COFFEE_RATINGS: [string, number][] = [
   ['Roast Level', 4],
 ]
 export const COFFEE_ROW_HEIGHT = 112
-export const COFFEE_LABEL_SIZE = 20
+export const COFFEE_LABEL_SIZE = 24
 export const COFFEE_STARS_Y = 56
 
-export const COFFEE_CTA = { text: "LET'S CHAT", size: '24px', padding: { x: 28, y: 28 }, labelOffsetY: -2, offsetX: 160, offsetY: 30, scale: 4, edge: 5, pressDepth: 1 }
+export const COFFEE_CTA = { text: "LET'S CHAT", size: '28px', padding: { x: 28, y: 28 }, labelOffsetY: -2, offsetX: 160, offsetY: 30, scale: 4, edge: 5, pressDepth: 1 }
 export const CTA_ARROW_GAP = 12
 export const CTA_ARROW_TINT = 0xd9bf8c
 export const ERWIX_URL = 'https://erwix.net/'

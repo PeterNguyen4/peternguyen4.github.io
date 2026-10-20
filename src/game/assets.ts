@@ -16,6 +16,7 @@ import buttonHover from '../assets/ui/button-hover.png'
 import buttonClick from '../assets/ui/button-click.png'
 import inset from '../assets/ui/inset.png'
 import banner from '../assets/ui/banner.png'
+import bannerTall from '../assets/ui/banner-tall.png'
 import dialogue from '../assets/ui/dialogue.png'
 import termination from '../assets/ui/termination.png'
 import stats from '../assets/ui/stats.png'
@@ -37,6 +38,7 @@ import steamSheet from '../assets/sprites/coffee-steam-spritesheet.png'
 export const TEXTURE = {
   arrow: 'arrow',
   banner: 'banner',
+  bannerTall: 'banner-tall',
   button: 'button',
   buttonHover: 'button-hover',
   buttonClick: 'button-down',
@@ -80,6 +82,7 @@ export const ANIM = {
 export const IMAGES = {
   [TEXTURE.arrow]: arrow,
   [TEXTURE.banner]: banner,
+  [TEXTURE.bannerTall]: bannerTall,
   [TEXTURE.button]: buttonBase,
   [TEXTURE.buttonHover]: buttonHover,
   [TEXTURE.buttonClick]: buttonClick,

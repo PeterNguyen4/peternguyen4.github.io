@@ -1,4 +1,3 @@
-import '@fontsource/press-start-2p'
 import Phaser from 'phaser'
 import { useEffect, useRef } from 'react'
 import { MainScene } from './MainScene'
@@ -9,7 +8,7 @@ export function PhaserGame() {
   useEffect(() => {
     let game: Phaser.Game | undefined
     let cancelled = false
-    document.fonts.load('32px "Press Start 2P"').finally(() => {
+    document.fonts.load('32px "FS Pixel Sans"').finally(() => {
       if (cancelled) return
       game = new Phaser.Game({
         type: Phaser.AUTO,
