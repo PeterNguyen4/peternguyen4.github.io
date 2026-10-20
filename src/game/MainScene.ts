@@ -3,6 +3,9 @@ import { ANIM, IMAGES, SPRITESHEETS, TEXTURE } from './assets'
 import {
   BG_SCALE,
   COUNTER_DROP,
+  MACHINE_OFFSET,
+  MACHINE_ORIGIN,
+  MACHINE_SCALE,
   MUG_OFFSET,
   PERSON_HEIGHT,
   PERSON_POS,
@@ -18,6 +21,11 @@ import {
   COFFEE_BUFF_ROWS,
   COFFEE_BUFF_SIZE,
   COFFEE_BANNER,
+  CTA_ARROW_GAP,
+  CTA_ARROW_TINT,
+  CONTACT_GMAIL,
+  ERWIX_FALLBACK_URL,
+  ERWIX_URL,
   COFFEE_CTA,
   COFFEE_FRAME_SLICE,
   COFFEE_LABEL_SIZE,
@@ -34,7 +42,7 @@ import {
   NIGHT_COLOR,
 } from './config/coffee'
 import { ITEM_COLOR } from './config/dialog'
-import { COFFEE_POPUP, FONT, PALETTE, PROFILE_POPUP } from './config/popup'
+import { COFFEE_POPUP, FONT, PALETTE, PANEL_SCALE, PANEL_SLICE, POPUP_WRAP_PAD, POPUP_BODY_SIZE, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
 import { END_HOLD_MS, HAND_PROFILE_FPS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
@@ -58,12 +66,24 @@ import {
   TOOLTIP_TEXT_COLOR,
   TOOLTIP_TEXT_Y,
 } from './config/toolbar'
-import { popThenSettle, TOOL_POP_MS, TOOL_SETTLE_MS } from './effects/easing'
+import { TOOL_GLOW_DELAY_MS, TOOL_GLOW_MS, TOOL_POP_HOLD_MS, TOOL_POP_SCALE, TOOL_RUMBLE_PX, TOOL_RUMBLE_STEP_MS, TOOL_RUMBLE_X } from './effects/easing'
 import { makeHoverable } from './effects/hover'
 import { addBanner } from './Banner'
 import { showDialog } from './Dialog'
 import { showPopup } from './Popup'
 import { addStars } from './Rating'
+
+function openWithFallback(url: string, fallback: string) {
+  const tab = window.open('', '_blank')
+  if (!tab) return
+  tab.opener = null
+  const timeout = new AbortController()
+  const timer = setTimeout(() => timeout.abort(), 4000)
+  fetch(url, { mode: 'no-cors', signal: timeout.signal })
+    .then(() => (tab.location.href = url))
+    .catch(() => (tab.location.href = fallback))
+    .finally(() => clearTimeout(timer))
+}
 
 export class MainScene extends Phaser.Scene {
   private bg!: Phaser.GameObjects.Image
@@ -71,6 +91,7 @@ export class MainScene extends Phaser.Scene {
   private person!: Phaser.GameObjects.Sprite
   private profiles!: Phaser.GameObjects.Image
   private mug!: Phaser.GameObjects.Image
+  private machine!: Phaser.GameObjects.Image
   private steam!: Phaser.GameObjects.Sprite
   private todos!: { icon: Phaser.GameObjects.Image; baseY: number }[]
   private toolItems: Phaser.GameObjects.Image[] = []
@@ -102,6 +123,10 @@ export class MainScene extends Phaser.Scene {
     this.counter = this.add.image(0, 0, TEXTURE.counter).setOrigin(0.5, 1).setDepth(2)
     this.profiles = this.add.image(0, 0, TEXTURE.papers).setDepth(3)
     this.mug = this.add.image(0, 0, TEXTURE.mug).setDepth(3)
+    this.machine = this.add
+      .image(0, 0, TEXTURE.coffeeMachine)
+      .setOrigin(MACHINE_ORIGIN.x, MACHINE_ORIGIN.y)
+      .setDepth(3)
     this.steam = this.add
       .sprite(0, 0, TEXTURE.steam, 0)
       .setOrigin(0.5, 1)
@@ -258,10 +283,94 @@ export class MainScene extends Phaser.Scene {
   private showProfile() {
     showPopup(this, {
       title: 'PETER NGUYEN',
-      body: 'Full-Stack Software Engineer\n\nProjects',
       ...PROFILE_POPUP,
+      content: (container, area) => this.buildProfile(container, area),
       onClose: () => this.addProfileTool(),
     })
+  }
+
+  private buildProfile(container: Phaser.GameObjects.Container, area: Phaser.Geom.Rectangle) {
+    const P = PROFILE_LAYOUT
+    const left = area.x + PANEL_SLICE * PANEL_SCALE + POPUP_WRAP_PAD / 2
+    const text = (x: number, y: number, str: string, size: string, color: string = PALETTE.text) =>
+      this.add.text(x, y, str, { fontFamily: FONT, fontSize: size, color }).setOrigin(0, 0.5)
+
+    container.add(text(left, area.y + P.headingY, 'Full-Stack Software Engineer', POPUP_BODY_SIZE, P.headingColor))
+
+    let x = left
+    const skills: [string, string][] = [
+      [TEXTURE.python, 'Python'],
+      [TEXTURE.typescript, 'TypeScript'],
+      [TEXTURE.postgresql, 'PostgreSQL'],
+    ]
+    for (const [texture, label] of skills) {
+      const icon = this.add.image(x, area.y + P.skillsY, texture).setOrigin(0, 0.5).setScale(P.iconScale)
+      const name = text(x + icon.displayWidth + P.iconGap, area.y + P.skillsY, label, P.skillSize)
+      container.add([icon, name])
+      x = name.x + name.width + P.skillGap
+    }
+
+    container.add(text(left, area.y + P.projectsY, 'Projects', POPUP_BODY_SIZE, P.headingColor))
+
+    const { edge } = COFFEE_FRAME_SLICE
+    const frameTop = area.y + P.rowY
+    const frameW = P.frameNative.w * P.frameScale
+    const frameH = P.frameNative.h * P.frameScale
+    const frame = this.add
+      .nineslice(left + frameW / 2, frameTop + frameH / 2, TEXTURE.inset, undefined, P.frameNative.w, P.frameNative.h, edge, edge, edge, edge)
+      .setScale(P.frameScale)
+    const shot = this.add.image(left + frameW / 2, frameTop + frameH / 2, TEXTURE.erwix).setScale(P.frameScale)
+    container.add([frame, shot])
+
+    const cx = left + frameW + P.columnGap + P.bannerWidth / 2
+    const banner = addBanner(
+      this,
+      cx,
+      frameTop,
+      P.title,
+      COFFEE_BANNER.size,
+      COFFEE_BANNER.lineSpacing,
+      COFFEE_BANNER.scale,
+      COFFEE_BANNER.padX,
+      P.bannerWidth,
+    )
+    const bulletLeft = cx - P.plateWidth / 2 + P.platePadX
+    let y = banner.overlapY + P.bulletsOffsetY
+    const bullets = P.bullets.map((str) => {
+      const bean = this.add.image(bulletLeft, y, TEXTURE.coffeeBean).setOrigin(0).setScale(P.bulletScale)
+      const textX = bulletLeft + bean.displayWidth + P.bulletGap
+      const label = this.add
+        .text(textX, y, str, {
+          fontFamily: FONT,
+          fontSize: P.bulletTextSize,
+          color: PALETTE.text,
+          lineSpacing: P.bulletLineSpacing,
+          wordWrap: { width: P.plateWidth - 2 * P.platePadX - bean.displayWidth - P.bulletGap },
+        })
+        .setOrigin(0)
+      const rowH = Math.max(label.height, bean.displayHeight)
+      bean.y = y + (rowH - bean.displayHeight) / 2
+      label.y = y + (rowH - label.height) / 2
+      y += rowH + P.bulletRowGap
+      return [bean, label]
+    })
+    const { slice, scale } = COFFEE_STATS_PLATE
+    const plateTop = banner.overlapY
+    const plateBottom = y - P.bulletRowGap + P.plateBottomPad
+    const plateW = P.plateWidth
+    const plate = this.add
+      .nineslice(cx, (plateTop + plateBottom) / 2, TEXTURE.stats, undefined, plateW / scale, (plateBottom - plateTop) / scale, slice, slice, slice, slice)
+      .setScale(scale)
+    container.add([plate, ...bullets.flat(), ...banner.objects])
+
+    this.addCta(
+      container,
+      cx,
+      plateBottom + P.ctaGap,
+      'VIEW',
+      () => openWithFallback(ERWIX_URL, ERWIX_FALLBACK_URL),
+      true,
+    )
   }
 
   private showCoffee() {
@@ -331,23 +440,42 @@ export class MainScene extends Phaser.Scene {
       container.add([name, ...addStars(this, rightX, y + COFFEE_STARS_Y, value)])
     })
 
-    const { scale: btnScale, edge: btnEdge, padding, pressDepth } = COFFEE_CTA
     const ctaX = rightX + COFFEE_CTA.offsetX
     const ctaY = area.y + COFFEE_RATINGS.length * COFFEE_ROW_HEIGHT + COFFEE_CTA.offsetY
+    this.addCta(container, ctaX, ctaY, COFFEE_CTA.text, () => window.open(CONTACT_GMAIL, '_blank', 'noopener'), true)
+  }
+
+  private addCta(
+    container: Phaser.GameObjects.Container,
+    cx: number,
+    top: number,
+    text: string,
+    onClick: () => void,
+    withArrow = false,
+  ) {
+    const { scale: btnScale, edge: btnEdge, padding, pressDepth } = COFFEE_CTA
     const label = this.add
-      .text(0, 0, COFFEE_CTA.text, { fontFamily: FONT, fontSize: COFFEE_CTA.size, color: PALETTE.edge })
+      .text(0, 0, text, { fontFamily: FONT, fontSize: COFFEE_CTA.size, color: PALETTE.edge })
       .setOrigin(0.5)
-    const btnW = (label.width + padding.x * 2) / btnScale
+    const arrow = withArrow
+      ? this.add.image(0, 0, TEXTURE.arrow).setOrigin(0.5).setScale(btnScale).setTint(CTA_ARROW_TINT)
+      : undefined
+    const arrowW = arrow ? CTA_ARROW_GAP + arrow.displayWidth : 0
+    const contentW = label.width + arrowW
+    label.x = -contentW / 2 + label.width / 2
+    arrow?.setX(contentW / 2 - arrow.displayWidth / 2)
+    const btnW = (contentW + padding.x * 2) / btnScale
     const btnH = (label.height + padding.y * 2) / btnScale
     const button = this.add
       .nineslice(0, 0, TEXTURE.button, undefined, btnW, btnH, btnEdge, btnEdge, btnEdge, btnEdge)
       .setScale(btnScale)
-    const cta = this.add.container(ctaX, ctaY + (btnH * btnScale) / 2, [button, label])
-    const restLabelY = label.y + COFFEE_CTA.labelOffsetY
-    label.y = restLabelY
+    const face = arrow ? [label, arrow] : [label]
+    const cta = this.add.container(cx, top + (btnH * btnScale) / 2, [button, ...face])
+    const restY = COFFEE_CTA.labelOffsetY
+    face.forEach((o) => (o.y = restY))
     const setState = (texture: string, pressed: boolean) => {
       button.setTexture(texture)
-      label.y = restLabelY + (pressed ? pressDepth * btnScale : 0)
+      face.forEach((o) => (o.y = restY + (pressed ? pressDepth * btnScale : 0)))
     }
     cta
       .setSize(btnW * btnScale, btnH * btnScale)
@@ -357,7 +485,7 @@ export class MainScene extends Phaser.Scene {
       .on('pointerdown', () => setState(TEXTURE.buttonClick, true))
       .on('pointerup', () => {
         setState(TEXTURE.buttonHover, false)
-        window.open(TOOL_LINKS[0], '_blank', 'noopener')
+        onClick()
       })
     container.add(cta)
   }
@@ -397,17 +525,21 @@ export class MainScene extends Phaser.Scene {
     const index = this.toolIcons.length
     if (index >= TOOL_SLOTS || this.toolIcons.some((icon) => icon.texture.key === textureKey)) return
     const slot = this.toolItems[index]
-    const icon = this.add.image(slot.x, slot.y, textureKey).setDepth(1.5).setScale(0)
+    const icon = this.add.image(slot.x, slot.y, textureKey).setDepth(1.5).setScale(this.toolScale * TOOL_POP_SCALE)
     this.toolIcons[index] = icon
     this.toolLabels[index] = label
     slot.input!.cursor = 'pointer'
     slot.on('pointerdown', onClick)
 
-    this.tweens.add({
-      targets: icon,
-      scale: this.toolScale,
-      duration: TOOL_POP_MS + TOOL_SETTLE_MS,
-      ease: popThenSettle,
+    this.time.delayedCall(TOOL_POP_HOLD_MS, () => {
+      icon.setScale(this.toolScale)
+      TOOL_RUMBLE_X.forEach((dx, i) => {
+        this.time.delayedCall(TOOL_RUMBLE_STEP_MS * i, () => icon.setX(slot.x + dx * TOOL_RUMBLE_PX * this.toolScale))
+      })
+      this.time.delayedCall(TOOL_RUMBLE_STEP_MS * TOOL_RUMBLE_X.length + TOOL_GLOW_DELAY_MS, () => {
+        slot.setTexture(TEXTURE.toolItemFocus)
+        this.time.delayedCall(TOOL_GLOW_MS, () => slot.setTexture(TEXTURE.toolItem))
+      })
     })
   }
 
@@ -438,6 +570,10 @@ export class MainScene extends Phaser.Scene {
         this.profiles.x + MUG_OFFSET.x * this.profiles.displayWidth,
         this.profiles.y + MUG_OFFSET.y * this.profiles.displayHeight,
       )
+
+    this.machine
+      .setScale(s * MACHINE_SCALE)
+      .setPosition(this.mug.x + MACHINE_OFFSET.x * s, this.mug.y + MACHINE_OFFSET.y * s)
 
     this.steam
       .setScale(s)

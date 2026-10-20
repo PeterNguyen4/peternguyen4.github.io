@@ -1,14 +1,7 @@
-export const TOOL_POP_MS = 300
-export const TOOL_SETTLE_MS = 600
-const TOOL_OVERSHOOT = 1.25
-
-const POP_SHARE = TOOL_POP_MS / (TOOL_POP_MS + TOOL_SETTLE_MS)
-
-export function popThenSettle(t: number) {
-  if (t < POP_SHARE) {
-    const u = t / POP_SHARE
-    return TOOL_OVERSHOOT * (1 - (1 - u) * (1 - u))
-  }
-  const u = (t - POP_SHARE) / (1 - POP_SHARE)
-  return TOOL_OVERSHOOT + (1 - TOOL_OVERSHOOT) * Math.sin((u * Math.PI) / 2)
-}
+export const TOOL_POP_SCALE = 1.25
+export const TOOL_POP_HOLD_MS = 400
+export const TOOL_GLOW_MS = 500
+export const TOOL_GLOW_DELAY_MS = 250
+export const TOOL_RUMBLE_PX = 1
+export const TOOL_RUMBLE_STEP_MS = 40
+export const TOOL_RUMBLE_X = [1, -1, 0]
