@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { ANIM, IMAGES, SPRITESHEETS, TEXTURE } from './assets'
+import { ANIM, AUDIO, IMAGES, SOUNDS, SPRITESHEETS, TEXTURE } from './assets'
 import {
   COUNTER_DROP,
   MACHINE_OFFSET,
@@ -56,6 +56,8 @@ import {
   TOOLTIP_PANEL,
   TOOLTIP_TEXT_COLOR,
   TOOLTIP_TEXT_Y,
+  MUSIC_VOLUME,
+  VOLUME_BUTTON,
 } from './config/toolbar'
 import { TOOL_GLOW_DELAY_MS, TOOL_GLOW_MS, TOOL_POP_HOLD_MS, TOOL_POP_SCALE, TOOL_RUMBLE_PX, TOOL_RUMBLE_STEP_MS, TOOL_RUMBLE_X } from './effects/easing'
 import { makeHoverable } from './effects/hover'
@@ -95,7 +97,8 @@ export class MainScene extends Phaser.Scene {
   private tooltipLine!: Phaser.GameObjects.Rectangle
   private tooltipArrow!: Phaser.GameObjects.Image
   private tooltipHop: Phaser.Time.TimerEvent[] = []
-  private toolScale = 1
+  private volumeButton!: Phaser.GameObjects.Image
+  private musicOn = false
   private coffeeObtained = false
 
   constructor() {
@@ -104,6 +107,7 @@ export class MainScene extends Phaser.Scene {
 
   preload() {
     for (const [key, url] of Object.entries(IMAGES)) this.load.image(key, url)
+    for (const [key, url] of Object.entries(SOUNDS)) this.load.audio(key, url)
     for (const [key, { url, ...frame }] of Object.entries(SPRITESHEETS)) {
       this.load.spritesheet(key, url, frame)
     }
@@ -163,6 +167,7 @@ export class MainScene extends Phaser.Scene {
       .setDepth(TOOLTIP_DEPTH)
       .setVisible(false)
     this.toolIcons = TOOL_ICONS.map((key) => this.add.image(0, 0, key).setDepth(1.5))
+    this.addVolumeButton()
     makeHoverable(this, this.profiles, TEXTURE.papers)
     makeHoverable(this, this.mug, TEXTURE.mug)
     this.mug.on('pointerdown', () => {
