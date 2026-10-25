@@ -35,6 +35,7 @@ export function PhaserGame() {
         type: Phaser.AUTO,
         parent: el,
         pixelArt: true,
+        roundPixels: true,
         transparent: true,
         scale: { mode: Phaser.Scale.NONE, width, height, autoRound: false },
         scene: MainScene,

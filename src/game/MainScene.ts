@@ -65,7 +65,7 @@ import { addBanner, BANNER_TALL_STYLE } from './Banner'
 import { showDialog } from './Dialog'
 import { showPopup } from './Popup'
 import { addStars } from './Rating'
-import { addText } from './Text'
+import { addText, inkWidth } from './Text'
 
 function openWithFallback(url: string, fallback: string) {
   const tab = window.open('', '_blank')
@@ -266,7 +266,8 @@ export class MainScene extends Phaser.Scene {
 
   private showTooltipAt(label: string, edgeX: number, y: number, hasArrow: boolean) {
     this.tooltipLabel.setText(label)
-    const labelW = this.tooltipLabel.width
+    const fullW = this.tooltipLabel.width
+    const labelW = inkWidth(label)
     const arrowW = hasArrow ? TOOLTIP_ARROW.gap + TOOLTIP_ARROW.size : 0
     const panelW = Math.max(TOOLTIP_PANEL.minWidth, Math.ceil(labelW + arrowW) + 2 * TOOLTIP_PAD)
     const groupLeft = (panelW - labelW - arrowW) / 2
@@ -274,9 +275,9 @@ export class MainScene extends Phaser.Scene {
     this.tooltipPanel
       .setSize(panelW + 2 * TOOLTIP_PANEL.left, 32)
       .setPosition(-TOOLTIP_PANEL.left, -TOOLTIP_PANEL.centerY)
-    this.tooltipLabel.setPosition(groupLeft + labelW / 2, TOOLTIP_TEXT_Y)
+    this.tooltipLabel.setPosition(groupLeft + fullW / 2, TOOLTIP_TEXT_Y)
     this.tooltipLine
-      .setSize(this.tooltipLabel.width, 1)
+      .setSize(labelW, 1)
       .setPosition(groupLeft, TOOLTIP_LINE.y)
     this.tooltipArrow
       .setVisible(hasArrow)
@@ -357,7 +358,7 @@ export class MainScene extends Phaser.Scene {
       COFFEE_BANNER.padX,
       P.bannerWidth,
     )
-    const bulletLeft = cx - P.plateWidth / 2 + P.platePadX
+    const bulletLeft = cx - P.plateWidth / 2 + P.platePadX + P.bulletShiftX
     let y = banner.overlapY + P.bulletsOffsetY
     const bullets = P.bullets.map((str) => {
       const bean = this.add.image(bulletLeft, y, TEXTURE.coffeeBean).setOrigin(0)
@@ -365,18 +366,16 @@ export class MainScene extends Phaser.Scene {
       const label = addText(this, textX, y, str, {
           color: PALETTE.text,
           lineSpacing: P.bulletLineSpacing,
-          wordWrap: { width: P.plateWidth - 2 * P.platePadX - bean.displayWidth - P.bulletGap },
+          wordWrap: { width: P.plateWidth - 2 * P.platePadX - P.bulletShiftX - bean.displayWidth - P.bulletGap },
         })
         .setOrigin(0)
       const rowH = Math.max(label.height, bean.displayHeight)
-      bean.y = y + (rowH - bean.displayHeight) / 2
-      label.y = y + (rowH - label.height) / 2
       y += rowH + P.bulletRowGap
       return [bean, label]
     })
     const { slice } = COFFEE_STATS_PLATE
     const plateTop = banner.overlapY
-    const plateBottom = y - P.bulletRowGap + P.plateBottomPad
+    const plateBottom = Math.ceil(y - P.bulletRowGap + P.plateBottomPad)
     const plateW = P.plateWidth
     const plate = this.add
       .nineslice(cx, (plateTop + plateBottom) / 2, TEXTURE.stats, undefined, plateW, plateBottom - plateTop, slice, slice, slice, slice)

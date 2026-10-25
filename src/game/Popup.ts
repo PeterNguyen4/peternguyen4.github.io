@@ -109,7 +109,6 @@ export function showPopup(scene: Phaser.Scene, opts: PopupOptions) {
     container.destroy()
     opts.onClose?.()
   }
-  dim.once('pointerdown', dismiss)
   close.once('pointerdown', dismiss)
   return dismiss
 }

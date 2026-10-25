@@ -28,6 +28,10 @@ function lineWidth(line: string) {
   return width
 }
 
+export function inkWidth(str: string) {
+  return Math.max(0, lineWidth(str) - 1)
+}
+
 function glyphFor(ch: string, color: string, ascent: number, height: number) {
   const key = `${color}|${ch}`
   let glyph = glyphCache.get(key)

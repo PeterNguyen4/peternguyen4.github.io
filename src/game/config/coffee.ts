@@ -46,7 +46,7 @@ export const COFFEE_RATINGS: [string, number][] = [
 export const COFFEE_ROW_HEIGHT = 30
 export const COFFEE_STARS_Y = 18
 
-export const COFFEE_CTA = { text: "LET'S CHAT", padding: { x: 8, y: 5 }, labelOffsetY: 0, arrowOffsetY: -1, offsetX: 36, offsetY: 4, edge: 5, pressDepth: 1 }
+export const COFFEE_CTA = { text: "LET'S CHAT", padding: { x: 8, y: 7 }, labelOffsetY: -1, arrowOffsetY: -2, offsetX: 36, offsetY: 4, edge: 5, pressDepth: 1 }
 export const CTA_ARROW_GAP = 3
 export const CTA_ARROW_TINT = 0xd9bf8c
 export const ERWIX_URL = 'https://erwix.net/'
