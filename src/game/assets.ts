@@ -1,3 +1,4 @@
+import music from '../assets/audio/music.mp3'
 import background from '../assets/backgrounds/background.png'
 import arrow from '../assets/icons/arrow-up-right.png'
 import coffee from '../assets/icons/coffee.png'
@@ -27,6 +28,12 @@ import star from '../assets/icons/star.png'
 import todo from '../assets/icons/todo.png'
 import toolItem from '../assets/ui/tool-item.png'
 import tooltip from '../assets/ui/tooltip.png'
+import volumeOff from '../assets/ui/volume-off.png'
+import volumeOffHover from '../assets/ui/volume-off-hover.png'
+import volumeOffClick from '../assets/ui/volume-off-click.png'
+import volumeOn from '../assets/ui/volume-on.png'
+import volumeOnHover from '../assets/ui/volume-on-hover.png'
+import volumeOnClick from '../assets/ui/volume-on-click.png'
 import coffeeMachine from '../assets/props/coffee-machine.png'
 import coffeeTub from '../assets/props/coffee-tub.png'
 import counter from '../assets/props/counter.png'
@@ -72,6 +79,20 @@ export const TEXTURE = {
   toolItemFocus: 'tool-item-focus',
   tooltip: 'tooltip',
   typescript: 'typescript',
+  volumeOff: 'volume-off',
+  volumeOffHover: 'volume-off-hover',
+  volumeOffClick: 'volume-off-click',
+  volumeOn: 'volume-on',
+  volumeOnHover: 'volume-on-hover',
+  volumeOnClick: 'volume-on-click',
+} as const
+
+export const AUDIO = {
+  music: 'music',
+} as const
+
+export const SOUNDS = {
+  [AUDIO.music]: music,
 } as const
 
 export const ANIM = {
@@ -114,6 +135,12 @@ export const IMAGES = {
   [TEXTURE.toolItemFocus]: toolItemFocus,
   [TEXTURE.tooltip]: tooltip,
   [TEXTURE.typescript]: typescript,
+  [TEXTURE.volumeOff]: volumeOff,
+  [TEXTURE.volumeOffHover]: volumeOffHover,
+  [TEXTURE.volumeOffClick]: volumeOffClick,
+  [TEXTURE.volumeOn]: volumeOn,
+  [TEXTURE.volumeOnHover]: volumeOnHover,
+  [TEXTURE.volumeOnClick]: volumeOnClick,
 } as const
 
 export const SPRITESHEETS = {

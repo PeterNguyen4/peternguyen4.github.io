@@ -1,32 +1,55 @@
 import Phaser from 'phaser'
 import { useEffect, useRef } from 'react'
 import { MainScene } from './MainScene'
+import { FONT_LOAD } from './Text'
+import { MIN_VIEW_H, MIN_VIEW_W } from './config/layout'
 import background from '../assets/backgrounds/background.png'
+
+function measure(el: HTMLElement) {
+  const dpr = window.devicePixelRatio || 1
+  const devW = el.clientWidth * dpr
+  const devH = el.clientHeight * dpr
+  const zoom = Math.max(1, Math.floor(Math.min(devW / MIN_VIEW_W, devH / MIN_VIEW_H)))
+  return { dpr, zoom, width: Math.floor(devW / zoom), height: Math.floor(devH / zoom) }
+}
+
+function styleCanvas(game: Phaser.Game, dpr: number, zoom: number) {
+  const { width, height, canvas } = game.scale
+  canvas.style.width = `${(width * zoom) / dpr}px`
+  canvas.style.height = `${(height * zoom) / dpr}px`
+  game.scale.refresh()
+}
 
 export function PhaserGame() {
   const parent = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const el = parent.current!
     let game: Phaser.Game | undefined
     let cancelled = false
-    document.fonts.load('32px "FS Pixel Sans"').finally(() => {
+    let observer: ResizeObserver | undefined
+    document.fonts.load(FONT_LOAD).finally(() => {
       if (cancelled) return
+      const { dpr, zoom, width, height } = measure(el)
       game = new Phaser.Game({
         type: Phaser.AUTO,
-        parent: parent.current!,
+        parent: el,
         pixelArt: true,
-        backgroundColor: '#2a1a10',
-        scale: {
-          mode: Phaser.Scale.FIT,
-          autoCenter: Phaser.Scale.CENTER_BOTH,
-          width: 1920,
-          height: 1080,
-        },
+        transparent: true,
+        scale: { mode: Phaser.Scale.NONE, width, height, autoRound: false },
         scene: MainScene,
       })
+      styleCanvas(game, dpr, zoom)
+      observer = new ResizeObserver(() => {
+        const next = measure(el)
+        game!.scale.resize(next.width, next.height)
+        styleCanvas(game!, next.dpr, next.zoom)
+      })
+      observer.observe(el)
     })
     return () => {
       cancelled = true
+      observer?.disconnect()
       game?.destroy(true)
     }
   }, [])

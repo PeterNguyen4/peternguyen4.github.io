@@ -6,7 +6,6 @@ import {
   STAR_EMPTY_FADE_TO as EMPTY_FADE_TO,
   STAR_EMPTY_KEY as EMPTY_KEY,
   STAR_GAP,
-  STAR_SCALE,
 } from './config/rating'
 
 function ensureEmptyStarTexture(scene: Phaser.Scene) {
@@ -27,16 +26,16 @@ function ensureEmptyStarTexture(scene: Phaser.Scene) {
 export function addStars(scene: Phaser.Scene, x: number, y: number, rating: number) {
   ensureEmptyStarTexture(scene)
   const { width, height } = scene.textures.get(TEXTURE.star).getSourceImage()
-  const step = width * STAR_SCALE + STAR_GAP
+  const step = width + STAR_GAP
   const objects: Phaser.GameObjects.Image[] = []
   for (let i = 0; i < STAR_COUNT; i++) {
     const sx = x + i * step
-    objects.push(scene.add.image(sx, y, EMPTY_KEY).setOrigin(0, 0.5).setScale(STAR_SCALE))
+    objects.push(scene.add.image(sx, y, EMPTY_KEY).setOrigin(0, 0.5))
     const fill = Phaser.Math.Clamp(rating - i, 0, 1)
     const cropWidth = Math.round(width * fill)
     if (cropWidth > 0) {
       objects.push(
-        scene.add.image(sx, y, TEXTURE.star).setOrigin(0, 0.5).setScale(STAR_SCALE).setCrop(0, 0, cropWidth, height),
+        scene.add.image(sx, y, TEXTURE.star).setOrigin(0, 0.5).setCrop(0, 0, cropWidth, height),
       )
     }
   }

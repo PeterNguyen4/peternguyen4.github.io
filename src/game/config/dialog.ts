@@ -1,9 +1,8 @@
 export const DIALOG_WIDTH = 0.8
-export const DIALOG_HEIGHT = 240
-export const DIALOG_BOTTOM_MARGIN = 40
-export const DIALOG_TEXT_SIZE = '40px'
-export const DIALOG_TEXT_PAD = { x: 64, y: 48 }
-export const DIALOG_ARROW = { scale: 4, right: 72, bottom: 48, bobMs: 500 }
+export const DIALOG_HEIGHT = 60
+export const DIALOG_BOTTOM_MARGIN = 10
+export const DIALOG_TEXT_PAD = { x: 16, y: 12 }
+export const DIALOG_ARROW = { right: 18, bottom: 12, bobMs: 500 }
 export const DIALOG_TEXT_COLOR = '#e0e0dd'
-export const DIALOG_PANEL = { scale: 4, slice: 4 }
+export const DIALOG_PANEL = { slice: 4 }
 export const ITEM_COLOR = { coffee: '#e8a05a', profile: '#7fb8e8' } as const
