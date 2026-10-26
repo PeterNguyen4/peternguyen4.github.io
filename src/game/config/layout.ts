@@ -4,7 +4,8 @@ export const NARROW_VIEW_W = 240
 export const NARROW_COUNTER_SHIFT = 28
 export const NARROW_TOOLBAR_BOTTOM = 6
 
-export const COUNTER_ART_SHIFT = 69
+export const COUNTER_PAD_LEFT = 80
+export const COUNTER_ART_SHIFT = 69 + COUNTER_PAD_LEFT
 export const PERSON_POS = { x: 125 + COUNTER_ART_SHIFT, y: 113 }
 export const PROFILE_OFFSET = { x: 45, y: -7 }
 export const MUG_OFFSET = { x: 43, y: -19 }
@@ -17,3 +18,4 @@ export const TODO_NUDGE = { x: 4, y: -4 }
 export const TODO_CORNER = { papers: { x: 10, y: -20 }, mug: { x: 14, y: -16 } }
 export const COUNTER_DROP = 18
 export const ROTATE_OVERLAY = { alpha: 0.85, depth: 200, scale: 2 }
+export const ROTATE_TEXT = { label: 'Rotate your device for a better experience', color: '#e0e0dd', gap: 14, margin: 24 }

@@ -8,6 +8,7 @@ import {
   NARROW_COUNTER_SHIFT,
   NARROW_TOOLBAR_BOTTOM,
   ROTATE_OVERLAY,
+  ROTATE_TEXT,
   PERSON_POS,
   PROFILE_OFFSET,
   STEAM_ALPHA,
@@ -41,7 +42,7 @@ import {
 } from './config/coffee'
 import { ITEM_COLOR } from './config/dialog'
 import { COFFEE_POPUP, PALETTE, PANEL_SLICE, POPUP_WRAP_PAD, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
-import { END_HOLD_MS, HAND_PROFILE_FPS, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
+import { END_HOLD_MS, HAND_PROFILE_FPS, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
   TOOL_ICONS,
@@ -105,7 +106,7 @@ export class MainScene extends Phaser.Scene {
   private volumeButton!: Phaser.GameObjects.Image
   private musicOn = false
   private horizontalBar = false
-  private rotateHint?: { dim: Phaser.GameObjects.Rectangle; icon: Phaser.GameObjects.Sprite }
+  private rotateHint?: { dim: Phaser.GameObjects.Rectangle; icon: Phaser.GameObjects.Sprite; label: Phaser.GameObjects.Text }
   private volumeTipX = 0
   private coffeeObtained = false
 
@@ -237,12 +238,20 @@ export class MainScene extends Phaser.Scene {
       .sprite(0, 0, TEXTURE.rotate, 0)
       .setScale(ROTATE_OVERLAY.scale)
       .setDepth(ROTATE_OVERLAY.depth + 1)
-    this.rotateHint = { dim, icon }
+    const label = addText(this, 0, 0, ROTATE_TEXT.label, {
+        color: ROTATE_TEXT.color,
+        align: 'center',
+        wordWrap: { width: this.scale.width - 2 * ROTATE_TEXT.margin },
+      })
+      .setOrigin(0.5, 0)
+      .setDepth(ROTATE_OVERLAY.depth + 1)
+    this.rotateHint = { dim, icon, label }
     this.anims.create({
       key: ANIM.rotate,
       frames: this.anims.generateFrameNumbers(TEXTURE.rotate, { start: 0, end: 7 }),
       frameRate: ROTATE_FPS,
       repeat: ROTATE_PLAYS - 1,
+      repeatDelay: ROTATE_REPEAT_DELAY_MS,
     })
     icon.play(ANIM.rotate)
     icon.once(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM.rotate, () => this.hideRotateHint())
@@ -255,12 +264,13 @@ export class MainScene extends Phaser.Scene {
     if (!hint) return
     this.rotateHint = undefined
     this.tweens.add({
-      targets: [hint.dim, hint.icon],
+      targets: [hint.dim, hint.icon, hint.label],
       alpha: 0,
       duration: ROTATE_FADE_MS,
       onComplete: () => {
         hint.dim.destroy()
         hint.icon.destroy()
+        hint.label.destroy()
       },
     })
   }
@@ -663,6 +673,7 @@ export class MainScene extends Phaser.Scene {
       this.rotateHint.dim.setSize(W, H)
       this.rotateHint.dim.input?.hitArea.setSize(W, H)
       this.rotateHint.icon.setPosition(Math.round(W / 2), Math.round(H / 2))
+      this.rotateHint.label.setPosition(Math.round(W / 2), Math.round(H / 2 + this.rotateHint.icon.displayHeight / 2 + ROTATE_TEXT.gap))
       if (!this.horizontalBar) this.hideRotateHint()
     }
     const shift = this.horizontalBar ? Math.min(NARROW_COUNTER_SHIFT, Math.max(0, (this.counter.width - W) / 2)) : 0

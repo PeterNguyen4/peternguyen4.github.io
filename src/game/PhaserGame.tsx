@@ -14,8 +14,13 @@ function measure(el: HTMLElement) {
   return { dpr, zoom, width: Math.floor(devW / zoom), height: Math.floor(devH / zoom) }
 }
 
-function styleCanvas(game: Phaser.Game, dpr: number, zoom: number) {
+function styleCanvas(game: Phaser.Game, el: HTMLElement, dpr: number, zoom: number) {
   const { width, height, canvas } = game.scale
+  const offsetX = Math.floor((el.clientWidth * dpr - width * zoom) / 2)
+  const offsetY = Math.floor((el.clientHeight * dpr - height * zoom) / 2)
+  canvas.style.position = 'absolute'
+  canvas.style.left = `${offsetX / dpr}px`
+  canvas.style.top = `${offsetY / dpr}px`
   canvas.style.width = `${(width * zoom) / dpr}px`
   canvas.style.height = `${(height * zoom) / dpr}px`
   game.scale.refresh()
@@ -41,11 +46,11 @@ export function PhaserGame() {
         scale: { mode: Phaser.Scale.NONE, width, height, autoRound: false },
         scene: MainScene,
       })
-      styleCanvas(game, dpr, zoom)
+      styleCanvas(game, el, dpr, zoom)
       observer = new ResizeObserver(() => {
         const next = measure(el)
         game!.scale.resize(next.width, next.height)
-        styleCanvas(game!, next.dpr, next.zoom)
+        styleCanvas(game!, el, next.dpr, next.zoom)
       })
       observer.observe(el)
     })
