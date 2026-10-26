@@ -5,6 +5,9 @@ import {
   MACHINE_OFFSET,
   MACHINE_ORIGIN,
   MUG_OFFSET,
+  NARROW_COUNTER_SHIFT,
+  NARROW_TOOLBAR_BOTTOM,
+  ROTATE_OVERLAY,
   PERSON_POS,
   PROFILE_OFFSET,
   STEAM_ALPHA,
@@ -24,6 +27,7 @@ import {
   ERWIX_FALLBACK_URL,
   ERWIX_URL,
   COFFEE_CTA,
+  COFFEE_COMPACT_GAP,
   COFFEE_FRAME_SLICE,
   COFFEE_LEFT_X,
   COFFEE_RATINGS,
@@ -37,7 +41,7 @@ import {
 } from './config/coffee'
 import { ITEM_COLOR } from './config/dialog'
 import { COFFEE_POPUP, PALETTE, PANEL_SLICE, POPUP_WRAP_PAD, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
-import { END_HOLD_MS, HAND_PROFILE_FPS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
+import { END_HOLD_MS, HAND_PROFILE_FPS, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
   TOOL_ICONS,
@@ -93,12 +97,16 @@ export class MainScene extends Phaser.Scene {
   private toolLabels: string[] = [...TOOL_LABELS]
   private tooltip!: Phaser.GameObjects.Container
   private tooltipPanel!: Phaser.GameObjects.NineSlice
+  private tooltipPanelV!: Phaser.GameObjects.NineSlice[]
   private tooltipLabel!: Phaser.GameObjects.Text
   private tooltipLine!: Phaser.GameObjects.Rectangle
   private tooltipArrow!: Phaser.GameObjects.Image
   private tooltipHop: Phaser.Time.TimerEvent[] = []
   private volumeButton!: Phaser.GameObjects.Image
   private musicOn = false
+  private horizontalBar = false
+  private rotateHint?: { dim: Phaser.GameObjects.Rectangle; icon: Phaser.GameObjects.Sprite }
+  private volumeTipX = 0
   private coffeeObtained = false
 
   constructor() {
@@ -117,6 +125,7 @@ export class MainScene extends Phaser.Scene {
     this.bg = this.add.image(0, 0, TEXTURE.background).setOrigin(0.5).setDepth(0)
     this.person = this.add.sprite(0, 0, TEXTURE.peterProfile, 0).setOrigin(0.5, 1).setDepth(4)
     this.counter = this.add.image(0, 0, TEXTURE.counter).setOrigin(0.5, 1).setDepth(2)
+    this.counter.setCrop(0, 0, this.counter.width, this.counter.height - COUNTER_DROP)
     this.profiles = this.add.image(0, 0, TEXTURE.papers).setDepth(3)
     this.mug = this.add.image(0, 0, TEXTURE.mug).setDepth(3)
     this.machine = this.add
@@ -134,7 +143,7 @@ export class MainScene extends Phaser.Scene {
     }))
     this.todos.forEach((todo, i) => this.hopTodo(todo, i === 0 ? 0 : TODO_HOP_MS))
     this.toolItems = Array.from({ length: TOOL_SLOTS }, () =>
-      this.add.image(0, 0, TEXTURE.toolItem).setDepth(1),
+      this.add.image(0, 0, TEXTURE.toolItem).setDepth(5),
     )
     this.toolItems.forEach((item, i) => {
       item.setInteractive({ cursor: i < TOOL_ICONS.length ? 'pointer' : 'default' })
@@ -158,15 +167,21 @@ export class MainScene extends Phaser.Scene {
     this.tooltipPanel = this.add
       .nineslice(0, 0, TEXTURE.tooltip, undefined, 32, 32, TOOLTIP_CAP, TOOLTIP_CAP)
       .setOrigin(0)
+    const vertical = this.textures.get(TEXTURE.tooltipVertical)
+    vertical.add('vl', 0, 0, 0, 16, 32)
+    vertical.add('vr', 0, 16, 0, 16, 32)
+    this.tooltipPanelV = ['vl', 'vr'].map((frame) =>
+      this.add.nineslice(0, 0, TEXTURE.tooltipVertical, frame, 16, 32, frame === 'vl' ? 12 : 1, frame === 'vl' ? 2 : 12, 12, 12).setOrigin(0),
+    )
     this.tooltipLabel = addText(this, 0, 0, '', { color: TOOLTIP_TEXT_COLOR })
       .setOrigin(0.5)
     this.tooltipLine = this.add.rectangle(0, 0, 1, 1, TOOLTIP_LINE.color).setOrigin(0)
     this.tooltipArrow = this.add.image(0, 0, TEXTURE.arrow).setOrigin(0, 0.5)
     this.tooltip = this.add
-      .container(0, 0, [this.tooltipPanel, this.tooltipLabel, this.tooltipLine, this.tooltipArrow])
+      .container(0, 0, [this.tooltipPanel, ...this.tooltipPanelV, this.tooltipLabel, this.tooltipLine, this.tooltipArrow])
       .setDepth(TOOLTIP_DEPTH)
       .setVisible(false)
-    this.toolIcons = TOOL_ICONS.map((key) => this.add.image(0, 0, key).setDepth(1.5))
+    this.toolIcons = TOOL_ICONS.map((key) => this.add.image(0, 0, key).setDepth(5.5))
     this.addVolumeButton()
     makeHoverable(this, this.profiles, TEXTURE.papers)
     makeHoverable(this, this.mug, TEXTURE.mug)
@@ -206,21 +221,60 @@ export class MainScene extends Phaser.Scene {
     })
 
     this.layout()
+    this.showRotateHint()
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this))
   }
 
+  private showRotateHint() {
+    if (!this.horizontalBar || this.sys.game.device.os.desktop) return
+    const dim = this.add
+      .rectangle(0, 0, 1, 1, 0x000000, ROTATE_OVERLAY.alpha)
+      .setOrigin(0)
+      .setDepth(ROTATE_OVERLAY.depth)
+      .setInteractive()
+    const icon = this.add
+      .sprite(0, 0, TEXTURE.rotate, 0)
+      .setScale(ROTATE_OVERLAY.scale)
+      .setDepth(ROTATE_OVERLAY.depth + 1)
+    this.rotateHint = { dim, icon }
+    this.anims.create({
+      key: ANIM.rotate,
+      frames: this.anims.generateFrameNumbers(TEXTURE.rotate, { start: 0, end: 7 }),
+      frameRate: ROTATE_FPS,
+      repeat: ROTATE_PLAYS - 1,
+    })
+    icon.play(ANIM.rotate)
+    icon.once(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM.rotate, () => this.hideRotateHint())
+    dim.once('pointerdown', () => this.hideRotateHint())
+    this.layout()
+  }
+
+  private hideRotateHint() {
+    const hint = this.rotateHint
+    if (!hint) return
+    this.rotateHint = undefined
+    this.tweens.add({
+      targets: [hint.dim, hint.icon],
+      alpha: 0,
+      duration: ROTATE_FADE_MS,
+      onComplete: () => {
+        hint.dim.destroy()
+        hint.icon.destroy()
+      },
+    })
+  }
+
   private addVolumeButton() {
-    const { textures, depth } = VOLUME_BUTTON
+    const { textures } = VOLUME_BUTTON
     this.musicOn = false
     this.sound.mute = !this.musicOn
     this.sound.play(AUDIO.music, { loop: true, volume: MUSIC_VOLUME })
     const frames = () => (this.musicOn ? textures.on : textures.off)
     const showTip = () => {
-      const slot = this.toolItems[0]
-      this.showTooltipAt(this.musicOn ? 'Music: ON' : 'Music: OFF', slot.x + slot.displayWidth / 2, this.volumeButton.y, false)
+      this.showTooltipAt(this.musicOn ? 'Music: ON' : 'Music: OFF', this.volumeTipX, this.volumeButton.y, false)
     }
-    this.volumeButton = this.add.image(0, 0, textures.off.base).setDepth(depth)
+    this.volumeButton = this.add.image(0, 0, textures.off.base).setDepth(5.5)
     this.volumeButton
       .setInteractive({ useHandCursor: true })
       .on('pointerover', () => {
@@ -261,10 +315,14 @@ export class MainScene extends Phaser.Scene {
     const label = this.toolLabels[i]
     const slot = this.toolItems[i]
     if (!label || !this.toolIcons[i]) return
+    if (this.horizontalBar) {
+      this.showTooltipAt(label, slot.x, slot.y - slot.displayHeight / 2 - 13.5, !!TOOL_LINKS[i], true)
+      return
+    }
     this.showTooltipAt(label, slot.x + slot.displayWidth / 2, slot.y, !!TOOL_LINKS[i])
   }
 
-  private showTooltipAt(label: string, edgeX: number, y: number, hasArrow: boolean) {
+  private showTooltipAt(label: string, edgeX: number, y: number, hasArrow: boolean, centered = false) {
     this.tooltipLabel.setText(label)
     const fullW = this.tooltipLabel.width
     const labelW = inkWidth(label)
@@ -272,9 +330,20 @@ export class MainScene extends Phaser.Scene {
     const panelW = Math.max(TOOLTIP_PANEL.minWidth, Math.ceil(labelW + arrowW) + 2 * TOOLTIP_PAD)
     const groupLeft = (panelW - labelW - arrowW) / 2
 
+    const fullPanelW = panelW + 2 * TOOLTIP_PANEL.left
     this.tooltipPanel
-      .setSize(panelW + 2 * TOOLTIP_PANEL.left, 32)
+      .setSize(fullPanelW, 32)
       .setPosition(-TOOLTIP_PANEL.left, -TOOLTIP_PANEL.centerY)
+      .setVisible(!centered)
+    const leftW = Math.ceil(fullPanelW / 2) + 1
+    this.tooltipPanelV[0]
+      .setSize(leftW, 32)
+      .setPosition(-TOOLTIP_PANEL.left, -TOOLTIP_PANEL.centerY)
+      .setVisible(centered)
+    this.tooltipPanelV[1]
+      .setSize(fullPanelW - leftW, 32)
+      .setPosition(-TOOLTIP_PANEL.left + leftW, -TOOLTIP_PANEL.centerY)
+      .setVisible(centered)
     this.tooltipLabel.setPosition(groupLeft + fullW / 2, TOOLTIP_TEXT_Y)
     this.tooltipLine
       .setSize(labelW, 1)
@@ -284,8 +353,11 @@ export class MainScene extends Phaser.Scene {
       .setPosition(groupLeft + labelW + TOOLTIP_ARROW.gap, TOOLTIP_TEXT_Y + TOOLTIP_ARROW.y)
 
     this.clearTooltipHop()
+    const x = centered
+      ? Phaser.Math.Clamp(Math.round(edgeX - panelW / 2), TOOLTIP_PANEL.left, this.scale.width - panelW - TOOLTIP_PANEL.left)
+      : edgeX + TOOLTIP_GAP
     this.tooltip
-      .setPosition(edgeX + TOOLTIP_GAP, y)
+      .setPosition(x, y)
       .setVisible(true)
     this.tooltipHop = [
       this.time.delayedCall(TOOLTIP_HOP_MS, () => this.tooltip.setY(y - 1)),
@@ -311,54 +383,68 @@ export class MainScene extends Phaser.Scene {
     showPopup(this, {
       title: 'PETER NGUYEN',
       ...PROFILE_POPUP,
-      content: (container, area) => this.buildProfile(container, area),
+      content: (container, area, compact) => this.buildProfile(container, area, compact),
       onClose: () => this.addProfileTool(),
     })
   }
 
-  private buildProfile(container: Phaser.GameObjects.Container, area: Phaser.Geom.Rectangle) {
+  private buildProfile(container: Phaser.GameObjects.Container, area: Phaser.Geom.Rectangle, compact: boolean) {
     const P = PROFILE_LAYOUT
     const left = area.x + PANEL_SLICE + POPUP_WRAP_PAD / 2
+    const innerW = area.width - 2 * (PANEL_SLICE + POPUP_WRAP_PAD / 2)
     const text = (x: number, y: number, str: string, color: string = PALETTE.text) =>
       addText(this, x, y, str, { color }).setOrigin(0, 0.5)
 
     container.add(text(left, area.y + P.headingY, 'Full-Stack Software Engineer', P.headingColor))
 
     let x = left
+    let rowShift = 0
     const skills: [string, string][] = [
       [TEXTURE.python, 'Python'],
       [TEXTURE.typescript, 'TypeScript'],
       [TEXTURE.postgresql, 'PostgreSQL'],
     ]
     for (const [texture, label] of skills) {
-      const icon = this.add.image(x, area.y + P.skillsY, texture).setOrigin(0, 0.5)
-      const name = text(x + icon.displayWidth + P.iconGap, area.y + P.skillsY, label)
+      const icon = this.add.image(x, area.y + P.skillsY + rowShift, texture).setOrigin(0, 0.5)
+      const name = text(x + icon.displayWidth + P.iconGap, area.y + P.skillsY + rowShift, label)
+      if (compact && x > left && name.x + name.width > left + innerW) {
+        rowShift += P.skillRowH
+        x = left
+        icon.setPosition(x, area.y + P.skillsY + rowShift)
+        name.setPosition(x + icon.displayWidth + P.iconGap, area.y + P.skillsY + rowShift)
+      }
       container.add([icon, name])
       x = name.x + name.width + P.skillGap
     }
 
-    container.add(text(left, area.y + P.projectsY, 'Projects', P.headingColor))
+    container.add(text(left, area.y + P.projectsY + rowShift, 'Projects', P.headingColor))
 
     const { edge } = COFFEE_FRAME_SLICE
-    const frameTop = area.y + P.rowY
+    const frameTop = area.y + P.rowY + rowShift
     const frameW = P.frameNative.w
     const frameH = P.frameNative.h
+    const frameLeft = compact ? Math.round(area.x + (area.width - frameW) / 2) : left
     const frame = this.add
-      .nineslice(left + frameW / 2, frameTop + frameH / 2, TEXTURE.inset, undefined, P.frameNative.w, P.frameNative.h, edge, edge, edge, edge)
-    const shot = this.add.image(left + frameW / 2, frameTop + frameH / 2, TEXTURE.erwix)
+      .nineslice(frameLeft + frameW / 2, frameTop + frameH / 2, TEXTURE.inset, undefined, P.frameNative.w, P.frameNative.h, edge, edge, edge, edge)
+    const shot = this.add.image(frameLeft + frameW / 2, frameTop + frameH / 2, TEXTURE.erwix)
     container.add([frame, shot])
 
-    const cx = Math.round(left + frameW + P.columnGap + P.bannerWidth / 2)
+    const bannerWidth = Math.min(P.bannerWidth, innerW)
+    const plateWidth = Math.min(P.plateWidth, innerW - 4)
+    const cx = compact
+      ? Math.round(area.x + area.width / 2)
+      : Math.round(left + frameW + P.columnGap + bannerWidth / 2)
+    const bannerTop = compact ? frameTop + frameH + P.stackGap : frameTop
     const banner = addBanner(
       this,
       cx,
-      frameTop,
+      bannerTop,
       P.title,
       COFFEE_BANNER.lineSpacing,
       COFFEE_BANNER.padX,
-      P.bannerWidth,
+      bannerWidth,
     )
-    const bulletLeft = cx - P.plateWidth / 2 + P.platePadX + P.bulletShiftX
+    const bulletLeft = cx - plateWidth / 2 + P.platePadX + P.bulletShiftX
     let y = banner.overlapY + P.bulletsOffsetY
     const bullets = P.bullets.map((str) => {
       const bean = this.add.image(bulletLeft, y, TEXTURE.coffeeBean).setOrigin(0)
@@ -366,7 +452,7 @@ export class MainScene extends Phaser.Scene {
       const label = addText(this, textX, y, str, {
           color: PALETTE.text,
           lineSpacing: P.bulletLineSpacing,
-          wordWrap: { width: P.plateWidth - 2 * P.platePadX - P.bulletShiftX - bean.displayWidth - P.bulletGap },
+          wordWrap: { width: plateWidth - 2 * P.platePadX - P.bulletShiftX - bean.displayWidth - P.bulletGap },
         })
         .setOrigin(0)
       const rowH = Math.max(label.height, bean.displayHeight)
@@ -376,12 +462,11 @@ export class MainScene extends Phaser.Scene {
     const { slice } = COFFEE_STATS_PLATE
     const plateTop = banner.overlapY
     const plateBottom = Math.ceil(y - P.bulletRowGap + P.plateBottomPad)
-    const plateW = P.plateWidth
     const plate = this.add
-      .nineslice(cx, (plateTop + plateBottom) / 2, TEXTURE.stats, undefined, plateW, plateBottom - plateTop, slice, slice, slice, slice)
+      .nineslice(cx, (plateTop + plateBottom) / 2, TEXTURE.stats, undefined, plateWidth, plateBottom - plateTop, slice, slice, slice, slice)
     container.add([plate, ...bullets.flat(), ...banner.objects])
 
-    this.addCta(
+    return this.addCta(
       container,
       cx,
       plateBottom + P.ctaGap,
@@ -395,16 +480,16 @@ export class MainScene extends Phaser.Scene {
     showPopup(this, {
       title: 'COFFEE',
       ...COFFEE_POPUP,
-      content: (container, area) => this.buildCoffeeReview(container, area),
+      content: (container, area, compact) => this.buildCoffeeReview(container, area, compact),
       onClose: () => this.addTool(TEXTURE.coffee, 'Coffee', () => this.showCoffee()),
     })
   }
 
-  private buildCoffeeReview(container: Phaser.GameObjects.Container, area: Phaser.Geom.Rectangle) {
+  private buildCoffeeReview(container: Phaser.GameObjects.Container, area: Phaser.Geom.Rectangle, compact: boolean) {
     const text = (x: number, y: number, str: string) =>
       addText(this, x, y, str, { color: PALETTE.text, align: 'center' })
 
-    const leftX = Math.round(area.x + area.width * COFFEE_LEFT_X)
+    const leftX = Math.round(area.x + area.width * (compact ? 0.5 : COFFEE_LEFT_X))
     const tubY = area.y + COFFEE_TUB_Y
     const { size: sliceSize, edge } = COFFEE_FRAME_SLICE
     const frame = this.add
@@ -448,6 +533,19 @@ export class MainScene extends Phaser.Scene {
         slice,
       )
     container.add([frame, tub, plate, ...buff, ...banner.objects])
+
+    if (compact) {
+      const colLeft = area.x + PANEL_SLICE + POPUP_WRAP_PAD / 2
+      const colW = (area.width - 2 * (PANEL_SLICE + POPUP_WRAP_PAD / 2)) / 2
+      const ratingsTop = plateBottom + COFFEE_COMPACT_GAP
+      COFFEE_RATINGS.forEach(([label, value], i) => {
+        const rx = Math.round(colLeft + (i % 2) * colW)
+        const y = ratingsTop + Math.floor(i / 2) * COFFEE_ROW_HEIGHT
+        container.add([text(rx, y, label).setOrigin(0), ...addStars(this, rx, y + COFFEE_STARS_Y, value)])
+      })
+      const ctaTop = ratingsTop + Math.ceil(COFFEE_RATINGS.length / 2) * COFFEE_ROW_HEIGHT + COFFEE_CTA.offsetY
+      return this.addCta(container, leftX, ctaTop, COFFEE_CTA.text, () => window.open(CONTACT_GMAIL, '_blank', 'noopener'), true)
+    }
 
     const rightX = Math.round(area.x + area.width * COFFEE_RIGHT_X)
     COFFEE_RATINGS.forEach(([label, value], i) => {
@@ -502,6 +600,7 @@ export class MainScene extends Phaser.Scene {
         onClick()
       })
     container.add(cta)
+    return top + btnH
   }
 
   private statRows(
@@ -538,7 +637,7 @@ export class MainScene extends Phaser.Scene {
     const index = this.toolIcons.length
     if (index >= TOOL_SLOTS || this.toolIcons.some((icon) => icon.texture.key === textureKey)) return
     const slot = this.toolItems[index]
-    const icon = this.add.image(slot.x, slot.y, textureKey).setDepth(1.5).setScale(TOOL_POP_SCALE)
+    const icon = this.add.image(slot.x, slot.y, textureKey).setDepth(5.5).setScale(TOOL_POP_SCALE)
     this.toolIcons[index] = icon
     this.toolLabels[index] = label
     slot.input!.cursor = 'pointer'
@@ -559,12 +658,22 @@ export class MainScene extends Phaser.Scene {
   private layout() {
     const { width: W, height: H } = this.scale
 
-    this.bg.setOrigin(0.5, 1).setPosition(Math.round(W / 2), H)
+    this.horizontalBar = W < H
+    if (this.rotateHint) {
+      this.rotateHint.dim.setSize(W, H)
+      this.rotateHint.dim.input?.hitArea.setSize(W, H)
+      this.rotateHint.icon.setPosition(Math.round(W / 2), Math.round(H / 2))
+      if (!this.horizontalBar) this.hideRotateHint()
+    }
+    const shift = this.horizontalBar ? Math.min(NARROW_COUNTER_SHIFT, Math.max(0, (this.counter.width - W) / 2)) : 0
+    const centerX = Math.round(W / 2 - shift)
+    const bgBottom = this.horizontalBar ? Math.min(H, Math.round((H + this.bg.height) / 2)) : H
+    this.bg.setOrigin(0.5, 1).setPosition(centerX, bgBottom)
 
     const counterH = this.counter.height
-    const bottom = H + COUNTER_DROP
-    this.counter.setPosition(Math.round(W / 2), bottom)
-    const left = Math.round(W / 2) - this.counter.width / 2
+    const bottom = bgBottom + COUNTER_DROP
+    this.counter.setPosition(centerX, bottom)
+    const left = centerX - this.counter.width / 2
     const top = bottom - counterH
 
     const personX = left + PERSON_POS.x
@@ -585,11 +694,22 @@ export class MainScene extends Phaser.Scene {
     place(1, this.mug, TODO_CORNER.mug)
 
     const slot = this.toolItems[0].height
-    const toolTop = TOOLBAR_TOP + slot / 2
     const step = slot + TOOL_GAP
+    const toolTop = TOOLBAR_TOP + slot / 2
+    this.volumeButton.setPosition(TOOLBAR_X, toolTop - VOLUME_BUTTON.lift)
+    if (this.horizontalBar) {
+      const barY = H - NARROW_TOOLBAR_BOTTOM - slot / 2
+      const barLeft = Math.round(W / 2 - (step * TOOL_SLOTS - TOOL_GAP) / 2 + slot / 2)
+      const toolX = (i: number) => barLeft + i * step
+      this.toolItems.forEach((item, i) => item.setPosition(toolX(i), barY))
+      this.toolIcons.forEach((icon, i) => icon.setPosition(toolX(i), barY))
+      this.volumeTipX = this.volumeButton.x + this.volumeButton.displayWidth / 2
+      return
+    }
+
     const toolY = (i: number) => toolTop + (i + VOLUME_BUTTON.rows) * step
     this.toolItems.forEach((item, i) => item.setPosition(TOOLBAR_X, toolY(i)))
     this.toolIcons.forEach((icon, i) => icon.setPosition(TOOLBAR_X, toolY(i)))
-    this.volumeButton.setPosition(TOOLBAR_X, toolTop - VOLUME_BUTTON.lift)
+    this.volumeTipX = this.volumeButton.x + this.volumeButton.displayWidth / 2
   }
 }

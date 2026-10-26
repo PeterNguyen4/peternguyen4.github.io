@@ -28,6 +28,7 @@ import star from '../assets/icons/star.png'
 import todo from '../assets/icons/todo.png'
 import toolItem from '../assets/ui/tool-item.png'
 import tooltip from '../assets/ui/tooltip.png'
+import tooltipVertical from '../assets/ui/tooltip-vertical.png'
 import volumeOff from '../assets/ui/volume-off.png'
 import volumeOffHover from '../assets/ui/volume-off-hover.png'
 import volumeOffClick from '../assets/ui/volume-off-click.png'
@@ -40,6 +41,7 @@ import counter from '../assets/props/counter.png'
 import mug from '../assets/props/mug.png'
 import papers from '../assets/props/papers.png'
 import peterProfileSheet from '../assets/sprites/peter-profile-spritesheet.png'
+import rotateSheet from '../assets/sprites/rotate-spritesheet.png'
 import steamSheet from '../assets/sprites/coffee-steam-spritesheet.png'
 
 export const TEXTURE = {
@@ -73,11 +75,13 @@ export const TEXTURE = {
   star: 'star',
   stats: 'stats',
   steam: 'steam',
+  rotate: 'rotate',
   termination: 'termination',
   todo: 'todo',
   toolItem: 'tool-item',
   toolItemFocus: 'tool-item-focus',
   tooltip: 'tooltip',
+  tooltipVertical: 'tooltip-vertical',
   typescript: 'typescript',
   volumeOff: 'volume-off',
   volumeOffHover: 'volume-off-hover',
@@ -98,6 +102,7 @@ export const SOUNDS = {
 export const ANIM = {
   handProfile: 'hand-profile',
   steam: 'steam',
+  rotate: 'rotate',
 } as const
 
 export const IMAGES = {
@@ -134,6 +139,7 @@ export const IMAGES = {
   [TEXTURE.toolItem]: toolItem,
   [TEXTURE.toolItemFocus]: toolItemFocus,
   [TEXTURE.tooltip]: tooltip,
+  [TEXTURE.tooltipVertical]: tooltipVertical,
   [TEXTURE.typescript]: typescript,
   [TEXTURE.volumeOff]: volumeOff,
   [TEXTURE.volumeOffHover]: volumeOffHover,
@@ -146,4 +152,5 @@ export const IMAGES = {
 export const SPRITESHEETS = {
   [TEXTURE.peterProfile]: { url: peterProfileSheet, frameWidth: 128, frameHeight: 128 },
   [TEXTURE.steam]: { url: steamSheet, frameWidth: 32, frameHeight: 32 },
+  [TEXTURE.rotate]: { url: rotateSheet, frameWidth: 48, frameHeight: 48 },
 } as const

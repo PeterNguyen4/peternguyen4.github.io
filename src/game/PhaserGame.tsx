@@ -2,14 +2,15 @@ import Phaser from 'phaser'
 import { useEffect, useRef } from 'react'
 import { MainScene } from './MainScene'
 import { FONT_LOAD } from './Text'
-import { MIN_VIEW_H, MIN_VIEW_W } from './config/layout'
+import { MIN_VIEW_H, MIN_VIEW_W, NARROW_VIEW_W } from './config/layout'
 import background from '../assets/backgrounds/background.png'
 
 function measure(el: HTMLElement) {
   const dpr = window.devicePixelRatio || 1
   const devW = el.clientWidth * dpr
   const devH = el.clientHeight * dpr
-  const zoom = Math.max(1, Math.floor(Math.min(devW / MIN_VIEW_W, devH / MIN_VIEW_H)))
+  const minW = devW < devH ? NARROW_VIEW_W : MIN_VIEW_W
+  const zoom = Math.max(1, Math.floor(Math.min(devW / minW, devH / MIN_VIEW_H)))
   return { dpr, zoom, width: Math.floor(devW / zoom), height: Math.floor(devH / zoom) }
 }
 

@@ -14,6 +14,8 @@ export const POPUP_TITLE_TOP = 20
 export const POPUP_BODY_LINE_SPACING = 3
 export const POPUP_CONTENT_GAP = 10
 export const POPUP_WRAP_PAD = 8
+export const POPUP_MARGIN = 8
+export const POPUP_BOTTOM_PAD = 12
 
 export const CLOSE_PLATE = { x0: 4, y0: 4, x1: 10, y1: 10 }
 export const CLOSE_HOVER_MULT = [0.88, 0.82, 0.72]
@@ -29,6 +31,8 @@ export const PROFILE_LAYOUT = {
   rowY: 50,
   iconGap: 4,
   skillGap: 14,
+  skillRowH: 20,
+  stackGap: 8,
   frameNative: { w: 100, h: 80 },
   columnGap: 10,
   bannerWidth: 190,
