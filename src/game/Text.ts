@@ -5,7 +5,7 @@ const FONT_FAMILY = '"CalculatorExtended", monospace'
 export const FONT_LOAD = '7px "CalculatorExtended"'
 
 const TEXT_RESOLUTION = 1
-
+const FIXED_METRICS = { ascent: GLYPH_ROWS, descent: 0, fontSize: GLYPH_ROWS }
 const GLYPH_ADVANCE = 6
 
 const glyphCache = new Map<string, HTMLCanvasElement>()
@@ -87,7 +87,7 @@ export function addText(
   text: string | string[],
   style: Phaser.Types.GameObjects.Text.TextStyle,
 ) {
-  const label = scene.add.text(x, y, text, { ...style, fontFamily: FONT_FAMILY, fontSize: '7px', resolution: TEXT_RESOLUTION })
+  const label = scene.add.text(x, y, text, { ...style, fontFamily: FONT_FAMILY, fontSize: '7px', resolution: TEXT_RESOLUTION, metrics: FIXED_METRICS })
   const updateText = label.updateText
   label.updateText = function () {
     updateText.call(this)
