@@ -44,6 +44,7 @@ export const COFFEE_RATINGS: [string, number][] = [
   ['Roast Level', 4],
 ]
 export const COFFEE_ROW_HEIGHT = 30
+export const COFFEE_COMPACT_GAP = 10
 export const COFFEE_STARS_Y = 18
 
 export const COFFEE_CTA = { text: "LET'S CHAT", padding: { x: 8, y: 7 }, labelOffsetY: -1, arrowOffsetY: -2, offsetX: 36, offsetY: 4, edge: 5, pressDepth: 1 }

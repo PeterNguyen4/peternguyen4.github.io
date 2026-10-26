@@ -6,3 +6,4 @@ export const DIALOG_ARROW = { right: 18, bottom: 12, bobMs: 500 }
 export const DIALOG_TEXT_COLOR = '#e0e0dd'
 export const DIALOG_PANEL = { slice: 4 }
 export const ITEM_COLOR = { coffee: '#e8a05a', profile: '#7fb8e8' } as const
+export const DIALOG_LINE_GAP = 3

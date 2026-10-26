@@ -5,12 +5,13 @@ import {
   DIALOG_PANEL,
   DIALOG_BOTTOM_MARGIN,
   DIALOG_HEIGHT,
+  DIALOG_LINE_GAP,
   DIALOG_TEXT_COLOR,
   DIALOG_TEXT_PAD,
   DIALOG_WIDTH,
 } from './config/dialog'
 import { POPUP_DEPTH } from './config/popup'
-import { addText } from './Text'
+import { addText, inkWidth } from './Text'
 
 export interface DialogOptions {
   parts: [string, string?][]
@@ -40,15 +41,24 @@ export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
       slice,
     )
     .setOrigin(0)
-  let textX = left + DIALOG_TEXT_PAD.x
-  const texts = opts.parts.map(([str, color]) => {
-    const t = addText(scene, textX, top + DIALOG_TEXT_PAD.y, str, {
-        color: color ?? DIALOG_TEXT_COLOR,
-      })
-      .setOrigin(0)
-    textX += t.width
-    return t
-  })
+  const startX = left + DIALOG_TEXT_PAD.x
+  const maxX = left + width - DIALOG_ARROW.right - DIALOG_TEXT_PAD.x / 2
+  let textX = startX
+  let textY = top + DIALOG_TEXT_PAD.y
+  let atWordStart = true
+  const texts = opts.parts.flatMap(([str, color]) =>
+    (str.match(/\S+\s*|\s+/g) ?? []).map((token) => {
+      const t = addText(scene, 0, 0, token, { color: color ?? DIALOG_TEXT_COLOR }).setOrigin(0)
+      if (atWordStart && textX > startX && textX + inkWidth(token) > maxX) {
+        textX = startX
+        textY += t.height + DIALOG_LINE_GAP
+      }
+      t.setPosition(textX, textY)
+      textX += t.width
+      atWordStart = /\s$/.test(token)
+      return t
+    }),
+  )
 
   const { right, bottom, bobMs } = DIALOG_ARROW
   const ax = left + width - right
