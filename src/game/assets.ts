@@ -1,4 +1,4 @@
-import music from '../assets/audio/music.mp3'
+import music from '../assets/audio/byte_roast.mp3'
 import background from '../assets/backgrounds/background.png'
 import arrow from '../assets/icons/arrow-up-right.png'
 import coffee from '../assets/icons/coffee.png'

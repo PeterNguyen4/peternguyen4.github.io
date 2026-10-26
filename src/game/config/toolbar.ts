@@ -8,7 +8,7 @@ export const TOOL_ICONS = [TEXTURE.linkedin, TEXTURE.github]
 export const TOOL_LABELS = ['LinkedIn', 'GitHub']
 export const TOOL_LINKS = ['https://www.linkedin.com/in/peternguyen4', 'https://github.com/PeterNguyen4']
 
-export const MUSIC_VOLUME = 0.15
+export const MUSIC_VOLUME = 0.2
 
 export const VOLUME_BUTTON = {
   rows: 1,
