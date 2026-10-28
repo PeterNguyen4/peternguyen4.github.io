@@ -4,6 +4,7 @@ export const TODO_HOP_MS = 150
 export const TODO_PAUSE_MS = { min: 2000, max: 4000 }
 export const STEAM_FPS = 5
 export const HAND_PROFILE_FPS = 8
+export const CAT_FPS = 2
 export const ROTATE_FPS = 8
 export const ROTATE_PLAYS = 3
 export const ROTATE_FADE_MS = 400
