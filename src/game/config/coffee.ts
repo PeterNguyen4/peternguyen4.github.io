@@ -45,7 +45,8 @@ export const COFFEE_RATINGS: [string, number][] = [
 ]
 export const COFFEE_ROW_HEIGHT = 30
 export const COFFEE_COMPACT_GAP = 10
-export const COFFEE_STARS_Y = 18
+export const COFFEE_STARS_Y = 14
+export const STARS_INSET = 2
 
 export const COFFEE_CTA = { text: "LET'S CHAT", padding: { x: 8, y: 7 }, labelOffsetY: -1, arrowOffsetY: -2, offsetX: 36, offsetY: 4, edge: 5, pressDepth: 1 }
 export const CTA_ARROW_GAP = 3
@@ -53,3 +54,18 @@ export const CTA_ARROW_TINT = 0xd9bf8c
 export const ERWIX_URL = 'https://erwix.net/'
 export const ERWIX_FALLBACK_URL = 'https://github.com/PeterNguyen4/Erwix'
 export const CONTACT_GMAIL = 'https://mail.google.com/mail/?view=cm&fs=1&to=peternguyen644@gmail.com&su=Hello%20Peter'
+
+export const NOSTALGIA_COLOR = '#c0455a'
+export const DIPLOMA_BANNER_Y = 72
+export const DIPLOMA_TRAIT_Y = 96
+export const DIPLOMA_TRAIT_ROW_GAP = 10
+export const DIPLOMA_BANNER_EXTRA = 14
+export const DIPLOMA_PLATE_PAD = { left: 14, right: 9 }
+export const DIPLOMA_RATINGS: [string, number][] = [
+  ['Lectures', 4.5],
+  ['Library', 5],
+  ['Food', 3],
+  ['Dorms', 4],
+]
+export const DIPLOMA_OUTLINE_DEPTH = 1
+export const RATINGS_COL_GAP = 16

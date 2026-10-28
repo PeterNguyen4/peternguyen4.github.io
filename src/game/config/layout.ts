@@ -1,7 +1,7 @@
 export const MIN_VIEW_W = 384
 export const MIN_VIEW_H = 216
 export const NARROW_VIEW_W = 240
-export const NARROW_COUNTER_SHIFT = 28
+export const NARROW_COUNTER_SHIFT = 41
 export const NARROW_TOOLBAR_BOTTOM = 6
 
 export const COUNTER_PAD_LEFT = 80
@@ -16,7 +16,8 @@ export const STEAM_ANCHOR = { x: -2, y: -6 }
 export const STEAM_ALPHA = 0.5
 export const TODO_ORIGIN = { x: 13 / 32, y: 19 / 32 }
 export const TODO_NUDGE = { x: 4, y: -4 }
-export const TODO_CORNER = { papers: { x: 10, y: -20 }, mug: { x: 14, y: -16 }, cat: { x: 32, y: -52 } }
+export const TODO_CORNER = { papers: { x: 10, y: -20 }, mug: { x: 14, y: -16 }, cat: { x: 32, y: -52 }, diploma: { x: 14, y: -30 } }
+export const DIPLOMA_POS = { x: 209, y: 128 }
 export const COUNTER_DROP = 18
 export const ROTATE_OVERLAY = { alpha: 0.85, depth: 200, scale: 2 }
 export const ROTATE_TEXT = { label: 'Rotate your device for a better experience', color: '#e0e0dd', gap: 14, margin: 24 }

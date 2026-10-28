@@ -40,6 +40,9 @@ import coffeeTub from '../assets/props/coffee-tub.png'
 import counter from '../assets/props/counter.png'
 import mug from '../assets/props/mug.png'
 import papers from '../assets/props/papers.png'
+import diplomaItem from '../assets/props/diploma-item.png'
+import diplomaWall from '../assets/props/diploma-wall.png'
+import heart from '../assets/icons/heart.png'
 import catDialogue from '../assets/props/cat-dialogue.png'
 import catSheet from '../assets/sprites/cat-spritesheet.png'
 import peterProfileSheet from '../assets/sprites/peter-profile-spritesheet.png'
@@ -56,6 +59,9 @@ export const TEXTURE = {
   buttonHover: 'button-hover',
   buttonClick: 'button-down',
   dialogue: 'dialogue',
+  diplomaItem: 'diploma-item',
+  diplomaWall: 'diploma-wall',
+  heart: 'heart',
   background: 'background',
   closeButton: 'close-button',
   coffee: 'coffee',
@@ -118,6 +124,9 @@ export const IMAGES = {
   [TEXTURE.buttonHover]: buttonHover,
   [TEXTURE.buttonClick]: buttonClick,
   [TEXTURE.dialogue]: dialogue,
+  [TEXTURE.diplomaItem]: diplomaItem,
+  [TEXTURE.diplomaWall]: diplomaWall,
+  [TEXTURE.heart]: heart,
   [TEXTURE.background]: background,
   [TEXTURE.catDialogue]: catDialogue,
   [TEXTURE.closeButton]: closeButton,

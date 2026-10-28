@@ -21,6 +21,7 @@ export interface DialogOptions {
   speaker?: string
   portrait?: string
   typewriter?: boolean
+  bottom?: number
   onClose?: () => void
 }
 
@@ -28,7 +29,7 @@ export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
   const { width: W, height: H } = scene.scale
   const width = Math.round(W * DIALOG_WIDTH)
   const left = Math.round((W - width) / 2)
-  const top = H - DIALOG_BOTTOM_MARGIN - DIALOG_HEIGHT
+  const top = (opts.bottom ?? H) - DIALOG_BOTTOM_MARGIN - DIALOG_HEIGHT
   const container = scene.add.container(0, 0).setDepth(POPUP_DEPTH)
 
   const catcher = scene.add.rectangle(0, 0, W, H, 0x000000, 0).setOrigin(0).setInteractive()

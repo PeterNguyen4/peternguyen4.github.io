@@ -10,9 +10,9 @@ import {
   OUTLINE_LUMA,
 } from '../config/hover'
 
-export function makeHoverable(scene: Phaser.Scene, image: Phaser.GameObjects.Image, textureKey: string) {
+export function makeHoverable(scene: Phaser.Scene, image: Phaser.GameObjects.Image, textureKey: string, outlineDepth = Infinity) {
   const hoverKey = `${textureKey}${HOVER_SUFFIX}`
-  const mask = buildHoverTexture(scene, textureKey, hoverKey)
+  const mask = buildHoverTexture(scene, textureKey, hoverKey, outlineDepth)
   const { width, height } = image
   image.setInteractive(
     new Phaser.Geom.Rectangle(0, 0, width, height),
@@ -63,7 +63,7 @@ export function makeHoverableSprite(
   })
 }
 
-function buildHoverTexture(scene: Phaser.Scene, textureKey: string, hoverKey: string) {
+function buildHoverTexture(scene: Phaser.Scene, textureKey: string, hoverKey: string, outlineDepth = Infinity) {
   const src = scene.textures.get(textureKey).getSourceImage() as HTMLImageElement
   const mask = new Uint8Array(src.width * src.height)
   const canvas = scene.textures.createCanvas(hoverKey, src.width, src.height)
@@ -78,6 +78,23 @@ function buildHoverTexture(scene: Phaser.Scene, textureKey: string, hoverKey: st
     if (px[i * 4 + 3] === 0) continue
     mask[i] = 1
     if ((px[i * 4] + px[i * 4 + 1] + px[i * 4 + 2]) / 3 < OUTLINE_LUMA) isOutline[i] = 1
+  }
+  const nearEdge = (x: number, y: number) => {
+    for (let dy = -outlineDepth; dy <= outlineDepth; dy++) {
+      for (let dx = -outlineDepth; dx <= outlineDepth; dx++) {
+        const nx = x + dx
+        const ny = y + dy
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h || !mask[ny * w + nx]) return true
+      }
+    }
+    return false
+  }
+  if (Number.isFinite(outlineDepth)) {
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (isOutline[y * w + x] && !nearEdge(x, y)) isOutline[y * w + x] = 0
+      }
+    }
   }
   const nearOutline = (x: number, y: number) => {
     for (let dy = -BAND_WIDTH; dy <= BAND_WIDTH; dy++) {
