@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { ANIM, AUDIO, IMAGES, SOUNDS, SPRITESHEETS, TEXTURE } from './assets'
 import {
   CAT_OFFSET,
+  DIPLOMA_POS,
   COUNTER_DROP,
   MACHINE_OFFSET,
   MACHINE_ORIGIN,
@@ -21,9 +22,17 @@ import {
 import {
   BUFF_COLOR,
   COFFEE_BUFF_ROWS,
-  COFFEE_BUFF_SIZE,
   COFFEE_BANNER,
+  COFFEE_BUFF_SIZE,
   CTA_ARROW_GAP,
+  DIPLOMA_BANNER_EXTRA,
+  DIPLOMA_OUTLINE_DEPTH,
+  DIPLOMA_PLATE_PAD,
+  DIPLOMA_BANNER_Y,
+  DIPLOMA_RATINGS,
+  DIPLOMA_TRAIT_ROW_GAP,
+  DIPLOMA_TRAIT_Y,
+  NOSTALGIA_COLOR,
   CTA_ARROW_TINT,
   CONTACT_GMAIL,
   ERWIX_FALLBACK_URL,
@@ -37,12 +46,13 @@ import {
   COFFEE_RIGHT_X,
   COFFEE_ROW_HEIGHT,
   COFFEE_STARS_Y,
+  STARS_INSET,
   COFFEE_TUB_Y,
   ICON_GAP,
   NIGHT_COLOR,
 } from './config/coffee'
 import { ITEM_COLOR } from './config/dialog'
-import { COFFEE_POPUP, PALETTE, PANEL_SLICE, POPUP_WRAP_PAD, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
+import { COFFEE_POPUP, DIPLOMA_POPUP, PALETTE, PANEL_SLICE, POPUP_WRAP_PAD, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
 import { CAT_FPS, END_HOLD_MS, HAND_PROFILE_FPS, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
@@ -67,11 +77,12 @@ import {
 } from './config/toolbar'
 import { TOOL_GLOW_DELAY_MS, TOOL_GLOW_MS, TOOL_POP_HOLD_MS, TOOL_POP_SCALE, TOOL_RUMBLE_PX, TOOL_RUMBLE_STEP_MS, TOOL_RUMBLE_X } from './effects/easing'
 import { makeHoverable, makeHoverableSprite } from './effects/hover'
-import { addBanner, BANNER_TALL_STYLE } from './Banner'
+import { addBanner, BANNER_STYLE, BANNER_TALL_STYLE } from './Banner'
 import { showDialog } from './Dialog'
 import { showPopup } from './Popup'
 import { addStars } from './Rating'
 import { addText, inkWidth } from './Text'
+import { GLYPH_ROWS } from './pixelFont'
 
 function openWithFallback(url: string, fallback: string) {
   const tab = window.open('', '_blank')
@@ -94,6 +105,7 @@ export class MainScene extends Phaser.Scene {
   private machine!: Phaser.GameObjects.Image
   private steam!: Phaser.GameObjects.Sprite
   private cat!: Phaser.GameObjects.Sprite
+  private diploma!: Phaser.GameObjects.Image
   private todos!: { icon: Phaser.GameObjects.Image; baseY: number }[]
   private toolItems: Phaser.GameObjects.Image[] = []
   private toolIcons: Phaser.GameObjects.Image[] = []
@@ -126,6 +138,7 @@ export class MainScene extends Phaser.Scene {
 
   create() {
     this.bg = this.add.image(0, 0, TEXTURE.background).setOrigin(0.5).setDepth(0)
+    this.diploma = this.add.image(0, 0, TEXTURE.diplomaWall).setDepth(1)
     this.person = this.add.sprite(0, 0, TEXTURE.peterProfile, 0).setOrigin(0.5, 1).setDepth(4)
     this.counter = this.add.image(0, 0, TEXTURE.counter).setOrigin(0.5, 1).setDepth(2)
     this.counter.setCrop(0, 0, this.counter.width, this.counter.height - COUNTER_DROP)
@@ -141,7 +154,7 @@ export class MainScene extends Phaser.Scene {
       .setDepth(3)
       .setAlpha(STEAM_ALPHA)
     this.cat = this.add.sprite(0, 0, TEXTURE.cat, 0).setOrigin(0, 1).setDepth(3)
-    this.todos = [0, 1, 2].map(() => ({
+    this.todos = [0, 1, 2, 3].map(() => ({
       icon: this.add.image(0, 0, TEXTURE.todo).setOrigin(TODO_ORIGIN.x, TODO_ORIGIN.y).setDepth(3.5),
       baseY: 0,
     }))
@@ -189,6 +202,11 @@ export class MainScene extends Phaser.Scene {
     this.addVolumeButton()
     makeHoverable(this, this.profiles, TEXTURE.papers)
     makeHoverable(this, this.mug, TEXTURE.mug)
+    makeHoverable(this, this.diploma, TEXTURE.diplomaWall, DIPLOMA_OUTLINE_DEPTH)
+    this.diploma.on('pointerdown', () => {
+      this.removeTodo(3)
+      this.showDiploma()
+    })
     makeHoverableSprite(this, this.cat, TEXTURE.cat, SPRITESHEETS[TEXTURE.cat].frameWidth, SPRITESHEETS[TEXTURE.cat].frameHeight)
     this.cat.on('pointerdown', () => {
       this.removeTodo(2)
@@ -541,7 +559,6 @@ export class MainScene extends Phaser.Scene {
         { y: area.y + COFFEE_BUFF_ROWS.energy, icon: TEXTURE.energy, parts: [['+15', BUFF_COLOR], [' Energy']] },
         { y: area.y + COFFEE_BUFF_ROWS.night, icon: TEXTURE.night, parts: [['2x', NIGHT_COLOR], [' at Night']] },
       ],
-      COFFEE_BUFF_SIZE,
     )
     const { slice, padLeft, padRight, padY } = COFFEE_STATS_PLATE
     const left = Math.min(...buff.map((o) => o.x))
@@ -571,7 +588,7 @@ export class MainScene extends Phaser.Scene {
       COFFEE_RATINGS.forEach(([label, value], i) => {
         const rx = Math.round(colLeft + (i % 2) * colW)
         const y = ratingsTop + Math.floor(i / 2) * COFFEE_ROW_HEIGHT
-        container.add([text(rx, y, label).setOrigin(0), ...addStars(this, rx, y + COFFEE_STARS_Y, value)])
+        container.add([text(rx, y, label).setAlign('left').setOrigin(0), ...addStars(this, rx + STARS_INSET, y + COFFEE_STARS_Y, value)])
       })
       const ctaTop = ratingsTop + Math.ceil(COFFEE_RATINGS.length / 2) * COFFEE_ROW_HEIGHT + COFFEE_CTA.offsetY
       return this.addCta(container, leftX, ctaTop, COFFEE_CTA.text, () => window.open(CONTACT_GMAIL, '_blank', 'noopener'), true)
@@ -580,13 +597,97 @@ export class MainScene extends Phaser.Scene {
     const rightX = Math.round(area.x + area.width * COFFEE_RIGHT_X)
     COFFEE_RATINGS.forEach(([label, value], i) => {
       const y = area.y + i * COFFEE_ROW_HEIGHT
-      const name = text(rightX, y, label).setOrigin(0)
-      container.add([name, ...addStars(this, rightX, y + COFFEE_STARS_Y, value)])
+      const name = text(rightX, y, label).setAlign('left').setOrigin(0)
+      container.add([name, ...addStars(this, rightX + STARS_INSET, y + COFFEE_STARS_Y, value)])
     })
 
     const ctaX = rightX + COFFEE_CTA.offsetX
     const ctaY = area.y + COFFEE_RATINGS.length * COFFEE_ROW_HEIGHT + COFFEE_CTA.offsetY
     this.addCta(container, ctaX, ctaY, COFFEE_CTA.text, () => window.open(CONTACT_GMAIL, '_blank', 'noopener'), true)
+  }
+
+  private showDiploma() {
+    showPopup(this, {
+      title: 'COLLEGE',
+      ...DIPLOMA_POPUP,
+      content: (container, area, compact) => this.buildDiplomaReview(container, area, compact),
+    })
+  }
+
+  private buildDiplomaReview(container: Phaser.GameObjects.Container, area: Phaser.Geom.Rectangle, compact: boolean) {
+    const text = (x: number, y: number, str: string, color: string = PALETTE.text) =>
+      addText(this, x, y, str, { color, align: 'center' })
+
+    const leftX = Math.round(area.x + area.width * (compact ? 0.5 : COFFEE_LEFT_X))
+    const itemY = area.y + COFFEE_TUB_Y
+    const { size: sliceSize, edge } = COFFEE_FRAME_SLICE
+    const frame = this.add
+      .nineslice(leftX, itemY, TEXTURE.inset, undefined, sliceSize, sliceSize, edge, edge, edge, edge)
+    const item = this.add.image(leftX, itemY, TEXTURE.diplomaItem)
+    const rowY = (i: number) => area.y + DIPLOMA_TRAIT_Y + i * DIPLOMA_TRAIT_ROW_GAP
+    const heading = text(0, rowY(0), 'Passive Trait', PROFILE_LAYOUT.headingColor).setOrigin(0.5, 0)
+    const gain = text(0, rowY(1), 'Gain').setOrigin(0)
+    const heart = this.add.image(0, rowY(1) + GLYPH_ROWS / 2, TEXTURE.heart).setOrigin(0, 0.5)
+    const nostalgia = text(0, rowY(1), 'Nostalgia', NOSTALGIA_COLOR).setOrigin(0)
+    const where = text(0, rowY(2), 'when in San Diego').setOrigin(0.5, 0)
+
+    const row1W = gain.width + ICON_GAP + heart.displayWidth + ICON_GAP + nostalgia.width
+    const row1Left = leftX - row1W / 2
+    gain.setX(row1Left)
+    heart.setX(row1Left + gain.width + ICON_GAP)
+    nostalgia.setX(heart.x + heart.displayWidth)
+    heading.setX(leftX)
+    where.setX(leftX)
+
+    const { slice, padY } = COFFEE_STATS_PLATE
+    const { left: padLeft, right: padRight } = DIPLOMA_PLATE_PAD
+    const contentW = Math.max(row1W, heading.width, where.width)
+    const plateW = contentW + padLeft + padRight
+    const banner = addBanner(
+      this,
+      leftX,
+      area.y + DIPLOMA_BANNER_Y,
+      'UCSD Diploma',
+      COFFEE_BANNER.lineSpacing,
+      COFFEE_BANNER.padX,
+      plateW + DIPLOMA_BANNER_EXTRA,
+      BANNER_STYLE,
+    )
+
+    const plateTop = banner.overlapY
+    const plateBottom = rowY(2) + GLYPH_ROWS + padY
+    const plate = this.add
+      .nineslice(
+        leftX + (padRight - padLeft) / 2,
+        (plateTop + plateBottom) / 2,
+        TEXTURE.stats,
+        undefined,
+        plateW,
+        plateBottom - plateTop,
+        slice,
+        slice,
+        slice,
+        slice,
+      )
+    container.add([frame, item, plate, heading, gain, heart, nostalgia, where, ...banner.objects])
+
+    if (compact) {
+      const colLeft = area.x + PANEL_SLICE + POPUP_WRAP_PAD / 2
+      const colW = (area.width - 2 * (PANEL_SLICE + POPUP_WRAP_PAD / 2)) / 2
+      const ratingsTop = plateBottom + COFFEE_COMPACT_GAP
+      DIPLOMA_RATINGS.forEach(([label, value], i) => {
+        const rx = Math.round(colLeft + (i % 2) * colW)
+        const y = ratingsTop + Math.floor(i / 2) * COFFEE_ROW_HEIGHT
+        container.add([text(rx, y, label).setAlign('left').setOrigin(0), ...addStars(this, rx + STARS_INSET, y + COFFEE_STARS_Y, value)])
+      })
+      return ratingsTop + Math.ceil(DIPLOMA_RATINGS.length / 2) * COFFEE_ROW_HEIGHT
+    }
+
+    const rightX = Math.round(area.x + area.width * COFFEE_RIGHT_X)
+    DIPLOMA_RATINGS.forEach(([label, value], i) => {
+      const y = area.y + i * COFFEE_ROW_HEIGHT
+      container.add([text(rightX, y, label).setAlign('left').setOrigin(0), ...addStars(this, rightX + STARS_INSET, y + COFFEE_STARS_Y, value)])
+    })
   }
 
   private addCta(
@@ -636,10 +737,9 @@ export class MainScene extends Phaser.Scene {
   private statRows(
     cx: number,
     rows: { y: number; icon: string; parts: [string, string?][] }[],
-    size: number,
   ) {
     const built = rows.map((row) => ({
-      icon: this.add.image(0, row.y + size / 2, row.icon).setOrigin(0.5),
+      icon: this.add.image(0, row.y + GLYPH_ROWS / 2, row.icon).setOrigin(0.5),
       texts: row.parts.map(([str, color]) =>
         addText(this, 0, row.y, str, { color: color ?? PALETTE.text })
           .setOrigin(0),
@@ -700,6 +800,7 @@ export class MainScene extends Phaser.Scene {
     const centerX = Math.round(W / 2 - shift)
     const bgBottom = this.horizontalBar ? Math.min(H, Math.round((H + this.bg.height) / 2)) : H
     this.bg.setOrigin(0.5, 1).setPosition(centerX, bgBottom)
+    this.diploma.setPosition(centerX - this.bg.width / 2 + DIPLOMA_POS.x, bgBottom - this.bg.height + DIPLOMA_POS.y)
 
     const counterH = this.counter.height
     const bottom = bgBottom + COUNTER_DROP
@@ -725,6 +826,7 @@ export class MainScene extends Phaser.Scene {
     place(0, this.profiles, TODO_CORNER.papers)
     place(1, this.mug, TODO_CORNER.mug)
     place(2, this.cat, TODO_CORNER.cat)
+    place(3, this.diploma, TODO_CORNER.diploma)
 
     const slot = this.toolItems[0].height
     const step = slot + TOOL_GAP

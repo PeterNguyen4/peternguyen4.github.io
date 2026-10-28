@@ -49,3 +49,4 @@ export const PROFILE_LAYOUT = {
   ctaGap: 4,
 } as const
 export const COFFEE_POPUP = { width: 296, height: 204 }
+export const DIPLOMA_POPUP = { width: 296, height: 204 }
