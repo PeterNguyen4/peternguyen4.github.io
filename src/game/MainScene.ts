@@ -46,6 +46,7 @@ import {
   COFFEE_RIGHT_X,
   COFFEE_ROW_HEIGHT,
   COFFEE_STARS_Y,
+  RATINGS_COL_GAP,
   STARS_INSET,
   COFFEE_TUB_Y,
   ICON_GAP,
@@ -80,6 +81,7 @@ import { makeHoverable, makeHoverableSprite } from './effects/hover'
 import { addBanner, BANNER_STYLE, BANNER_TALL_STYLE } from './Banner'
 import { showDialog } from './Dialog'
 import { showPopup } from './Popup'
+import { STAR_COUNT, STAR_GAP } from './config/rating'
 import { addStars } from './Rating'
 import { addText, inkWidth } from './Text'
 import { GLYPH_ROWS } from './pixelFont'
@@ -123,6 +125,7 @@ export class MainScene extends Phaser.Scene {
   private rotateHint?: { dim: Phaser.GameObjects.Rectangle; icon: Phaser.GameObjects.Sprite; label: Phaser.GameObjects.Text }
   private volumeTipX = 0
   private coffeeObtained = false
+  private sceneBottom = 0
 
   constructor() {
     super('main')
@@ -210,7 +213,7 @@ export class MainScene extends Phaser.Scene {
     makeHoverableSprite(this, this.cat, TEXTURE.cat, SPRITESHEETS[TEXTURE.cat].frameWidth, SPRITESHEETS[TEXTURE.cat].frameHeight)
     this.cat.on('pointerdown', () => {
       this.removeTodo(2)
-      showDialog(this, { parts: [['...']], speaker: 'Cat', portrait: TEXTURE.catDialogue, typewriter: true })
+      showDialog(this, { parts: [['...']], speaker: 'Cat', portrait: TEXTURE.catDialogue, typewriter: true, bottom: this.sceneBottom })
     })
     this.mug.on('pointerdown', () => {
       this.removeTodo(1)
@@ -424,7 +427,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private showObtained(item: string, color: string, onClose: () => void) {
-    showDialog(this, { parts: [['You obtained '], [item, color], ['!']], onClose })
+    showDialog(this, { parts: [['You obtained '], [item, color], ['!']], onClose, bottom: this.sceneBottom })
   }
 
   private showProfile() {
@@ -582,15 +585,9 @@ export class MainScene extends Phaser.Scene {
     container.add([frame, tub, plate, ...buff, ...banner.objects])
 
     if (compact) {
-      const colLeft = area.x + PANEL_SLICE + POPUP_WRAP_PAD / 2
-      const colW = (area.width - 2 * (PANEL_SLICE + POPUP_WRAP_PAD / 2)) / 2
       const ratingsTop = plateBottom + COFFEE_COMPACT_GAP
-      COFFEE_RATINGS.forEach(([label, value], i) => {
-        const rx = Math.round(colLeft + (i % 2) * colW)
-        const y = ratingsTop + Math.floor(i / 2) * COFFEE_ROW_HEIGHT
-        container.add([text(rx, y, label).setAlign('left').setOrigin(0), ...addStars(this, rx + STARS_INSET, y + COFFEE_STARS_Y, value)])
-      })
-      const ctaTop = ratingsTop + Math.ceil(COFFEE_RATINGS.length / 2) * COFFEE_ROW_HEIGHT + COFFEE_CTA.offsetY
+      const ratingsBottom = this.addCompactRatings(container, COFFEE_RATINGS, area, ratingsTop)
+      const ctaTop = ratingsBottom + COFFEE_CTA.offsetY
       return this.addCta(container, leftX, ctaTop, COFFEE_CTA.text, () => window.open(CONTACT_GMAIL, '_blank', 'noopener'), true)
     }
 
@@ -672,15 +669,8 @@ export class MainScene extends Phaser.Scene {
     container.add([frame, item, plate, heading, gain, heart, nostalgia, where, ...banner.objects])
 
     if (compact) {
-      const colLeft = area.x + PANEL_SLICE + POPUP_WRAP_PAD / 2
-      const colW = (area.width - 2 * (PANEL_SLICE + POPUP_WRAP_PAD / 2)) / 2
       const ratingsTop = plateBottom + COFFEE_COMPACT_GAP
-      DIPLOMA_RATINGS.forEach(([label, value], i) => {
-        const rx = Math.round(colLeft + (i % 2) * colW)
-        const y = ratingsTop + Math.floor(i / 2) * COFFEE_ROW_HEIGHT
-        container.add([text(rx, y, label).setAlign('left').setOrigin(0), ...addStars(this, rx + STARS_INSET, y + COFFEE_STARS_Y, value)])
-      })
-      return ratingsTop + Math.ceil(DIPLOMA_RATINGS.length / 2) * COFFEE_ROW_HEIGHT
+      return this.addCompactRatings(container, DIPLOMA_RATINGS, area, ratingsTop)
     }
 
     const rightX = Math.round(area.x + area.width * COFFEE_RIGHT_X)
@@ -688,6 +678,25 @@ export class MainScene extends Phaser.Scene {
       const y = area.y + i * COFFEE_ROW_HEIGHT
       container.add([text(rightX, y, label).setAlign('left').setOrigin(0), ...addStars(this, rightX + STARS_INSET, y + COFFEE_STARS_Y, value)])
     })
+  }
+
+  private addCompactRatings(
+    container: Phaser.GameObjects.Container,
+    ratings: [string, number][],
+    area: Phaser.Geom.Rectangle,
+    top: number,
+  ) {
+    const starW = this.textures.get(TEXTURE.star).getSourceImage().width
+    const starsW = STAR_COUNT * (starW + STAR_GAP) - STAR_GAP + STARS_INSET
+    const itemW = Math.max(starsW, ...ratings.map(([label]) => inkWidth(label)))
+    const left = Math.round(area.x + (area.width - (2 * itemW + RATINGS_COL_GAP)) / 2)
+    ratings.forEach(([label, value], i) => {
+      const x = left + (i % 2) * (itemW + RATINGS_COL_GAP)
+      const y = top + Math.floor(i / 2) * COFFEE_ROW_HEIGHT
+      const name = addText(this, x, y, label, { color: PALETTE.text }).setOrigin(0)
+      container.add([name, ...addStars(this, x + STARS_INSET, y + COFFEE_STARS_Y, value)])
+    })
+    return top + Math.ceil(ratings.length / 2) * COFFEE_ROW_HEIGHT
   }
 
   private addCta(
@@ -797,9 +806,11 @@ export class MainScene extends Phaser.Scene {
       if (!this.horizontalBar) this.hideRotateHint()
     }
     const shift = this.horizontalBar ? Math.min(NARROW_COUNTER_SHIFT, Math.max(0, (this.counter.width - W) / 2)) : 0
-    const centerX = Math.round(W / 2 - shift)
+    const centerX = Math.round(W / 2 + shift)
     const bgBottom = this.horizontalBar ? Math.min(H, Math.round((H + this.bg.height) / 2)) : H
     this.bg.setOrigin(0.5, 1).setPosition(centerX, bgBottom)
+    this.sceneBottom = bgBottom
+    this.machine.setVisible(!this.horizontalBar)
     this.diploma.setPosition(centerX - this.bg.width / 2 + DIPLOMA_POS.x, bgBottom - this.bg.height + DIPLOMA_POS.y)
 
     const counterH = this.counter.height

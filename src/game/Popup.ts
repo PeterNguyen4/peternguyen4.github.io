@@ -44,6 +44,22 @@ function ensureCloseHoverTexture(scene: Phaser.Scene) {
 }
 
 export function showPopup(scene: Phaser.Scene, opts: PopupOptions) {
+  let current = buildPopup(scene, opts, () => {
+    scene.scale.off(Phaser.Scale.Events.RESIZE, rebuild)
+    opts.onClose?.()
+  })
+  const rebuild = () => {
+    current.destroy()
+    current = buildPopup(scene, opts, () => {
+      scene.scale.off(Phaser.Scale.Events.RESIZE, rebuild)
+      opts.onClose?.()
+    })
+  }
+  scene.scale.on(Phaser.Scale.Events.RESIZE, rebuild)
+  return () => current.dismiss()
+}
+
+function buildPopup(scene: Phaser.Scene, opts: PopupOptions, onClose: () => void) {
   ensureCloseHoverTexture(scene)
   const { width: W, height: H } = scene.scale
   const width = Math.min(opts.width, W - 2 * POPUP_MARGIN)
@@ -119,8 +135,8 @@ export function showPopup(scene: Phaser.Scene, opts: PopupOptions) {
     if (closed) return
     closed = true
     container.destroy()
-    opts.onClose?.()
+    onClose()
   }
   close.once('pointerdown', dismiss)
-  return dismiss
+  return { dismiss, destroy: () => container.destroy() }
 }

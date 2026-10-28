@@ -68,3 +68,4 @@ export const DIPLOMA_RATINGS: [string, number][] = [
   ['Dorms', 4],
 ]
 export const DIPLOMA_OUTLINE_DEPTH = 1
+export const RATINGS_COL_GAP = 16

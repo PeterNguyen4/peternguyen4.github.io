@@ -1,7 +1,7 @@
 export const MIN_VIEW_W = 384
 export const MIN_VIEW_H = 216
 export const NARROW_VIEW_W = 240
-export const NARROW_COUNTER_SHIFT = 28
+export const NARROW_COUNTER_SHIFT = 41
 export const NARROW_TOOLBAR_BOTTOM = 6
 
 export const COUNTER_PAD_LEFT = 80
