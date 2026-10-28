@@ -122,6 +122,7 @@ export class MainScene extends Phaser.Scene {
   private volumeButton!: Phaser.GameObjects.Image
   private musicOn = false
   private horizontalBar = false
+  private portrait = false
   private rotateHint?: { dim: Phaser.GameObjects.Rectangle; icon: Phaser.GameObjects.Sprite; label: Phaser.GameObjects.Text }
   private volumeTipX = 0
   private coffeeObtained = false
@@ -269,7 +270,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private showRotateHint() {
-    if (!this.horizontalBar || this.sys.game.device.os.desktop) return
+    if (!this.portrait || this.sys.game.device.os.desktop) return
     const dim = this.add
       .rectangle(0, 0, 1, 1, 0x000000, ROTATE_OVERLAY.alpha)
       .setOrigin(0)
@@ -797,20 +798,21 @@ export class MainScene extends Phaser.Scene {
   private layout() {
     const { width: W, height: H } = this.scale
 
-    this.horizontalBar = W < H
+    this.portrait = W < H
+    this.horizontalBar = this.portrait || H > this.bg.height
     if (this.rotateHint) {
       this.rotateHint.dim.setSize(W, H)
       this.rotateHint.dim.input?.hitArea.setSize(W, H)
       this.rotateHint.icon.setPosition(Math.round(W / 2), Math.round(H / 2))
       this.rotateHint.label.setPosition(Math.round(W / 2), Math.round(H / 2 + this.rotateHint.icon.displayHeight / 2 + ROTATE_TEXT.gap))
-      if (!this.horizontalBar) this.hideRotateHint()
+      if (!this.portrait) this.hideRotateHint()
     }
-    const shift = this.horizontalBar ? Math.min(NARROW_COUNTER_SHIFT, Math.max(0, (this.counter.width - W) / 2)) : 0
+    const shift = this.portrait ? Math.min(NARROW_COUNTER_SHIFT, Math.max(0, (this.counter.width - W) / 2)) : 0
     const centerX = Math.round(W / 2 + shift)
     const bgBottom = this.horizontalBar ? Math.min(H, Math.round((H + this.bg.height) / 2)) : H
     this.bg.setOrigin(0.5, 1).setPosition(centerX, bgBottom)
     this.sceneBottom = bgBottom
-    this.machine.setVisible(!this.horizontalBar)
+    this.machine.setVisible(!this.portrait)
     this.diploma.setPosition(centerX - this.bg.width / 2 + DIPLOMA_POS.x, bgBottom - this.bg.height + DIPLOMA_POS.y)
 
     const counterH = this.counter.height
