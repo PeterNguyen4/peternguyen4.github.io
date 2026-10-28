@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { ANIM, AUDIO, IMAGES, SOUNDS, SPRITESHEETS, TEXTURE } from './assets'
 import {
+  CAT_OFFSET,
   COUNTER_DROP,
   MACHINE_OFFSET,
   MACHINE_ORIGIN,
@@ -42,7 +43,7 @@ import {
 } from './config/coffee'
 import { ITEM_COLOR } from './config/dialog'
 import { COFFEE_POPUP, PALETTE, PANEL_SLICE, POPUP_WRAP_PAD, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
-import { END_HOLD_MS, HAND_PROFILE_FPS, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
+import { CAT_FPS, END_HOLD_MS, HAND_PROFILE_FPS, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
   TOOL_ICONS,
@@ -65,7 +66,7 @@ import {
   VOLUME_BUTTON,
 } from './config/toolbar'
 import { TOOL_GLOW_DELAY_MS, TOOL_GLOW_MS, TOOL_POP_HOLD_MS, TOOL_POP_SCALE, TOOL_RUMBLE_PX, TOOL_RUMBLE_STEP_MS, TOOL_RUMBLE_X } from './effects/easing'
-import { makeHoverable } from './effects/hover'
+import { makeHoverable, makeHoverableSprite } from './effects/hover'
 import { addBanner, BANNER_TALL_STYLE } from './Banner'
 import { showDialog } from './Dialog'
 import { showPopup } from './Popup'
@@ -92,6 +93,7 @@ export class MainScene extends Phaser.Scene {
   private mug!: Phaser.GameObjects.Image
   private machine!: Phaser.GameObjects.Image
   private steam!: Phaser.GameObjects.Sprite
+  private cat!: Phaser.GameObjects.Sprite
   private todos!: { icon: Phaser.GameObjects.Image; baseY: number }[]
   private toolItems: Phaser.GameObjects.Image[] = []
   private toolIcons: Phaser.GameObjects.Image[] = []
@@ -138,11 +140,12 @@ export class MainScene extends Phaser.Scene {
       .setOrigin(0.5, 1)
       .setDepth(3)
       .setAlpha(STEAM_ALPHA)
-    this.todos = [0, 1].map(() => ({
+    this.cat = this.add.sprite(0, 0, TEXTURE.cat, 0).setOrigin(0, 1).setDepth(3)
+    this.todos = [0, 1, 2].map(() => ({
       icon: this.add.image(0, 0, TEXTURE.todo).setOrigin(TODO_ORIGIN.x, TODO_ORIGIN.y).setDepth(3.5),
       baseY: 0,
     }))
-    this.todos.forEach((todo, i) => this.hopTodo(todo, i === 0 ? 0 : TODO_HOP_MS))
+    this.todos.forEach((todo, i) => this.hopTodo(todo, i * TODO_HOP_MS))
     this.toolItems = Array.from({ length: TOOL_SLOTS }, () =>
       this.add.image(0, 0, TEXTURE.toolItem).setDepth(5),
     )
@@ -186,6 +189,11 @@ export class MainScene extends Phaser.Scene {
     this.addVolumeButton()
     makeHoverable(this, this.profiles, TEXTURE.papers)
     makeHoverable(this, this.mug, TEXTURE.mug)
+    makeHoverableSprite(this, this.cat, TEXTURE.cat, SPRITESHEETS[TEXTURE.cat].frameWidth, SPRITESHEETS[TEXTURE.cat].frameHeight)
+    this.cat.on('pointerdown', () => {
+      this.removeTodo(2)
+      showDialog(this, { parts: [['...']], speaker: 'Cat', portrait: TEXTURE.catDialogue, typewriter: true })
+    })
     this.mug.on('pointerdown', () => {
       this.removeTodo(1)
       if (this.coffeeObtained) return this.showCoffee()
@@ -206,6 +214,18 @@ export class MainScene extends Phaser.Scene {
       repeat: -1,
     })
     this.steam.play(ANIM.steam)
+
+    const catFrames = this.textures.get(TEXTURE.cat).frameTotal - 1
+    if (catFrames > 1) {
+      this.anims.create({
+        key: ANIM.cat,
+        frames: this.anims.generateFrameNumbers(TEXTURE.cat, { start: 0, end: catFrames - 1 }),
+        frameRate: CAT_FPS,
+        repeat: -1,
+        yoyo: true,
+      })
+      this.cat.play(ANIM.cat)
+    }
 
     this.profiles.once('pointerdown', () => {
       this.profiles.setTexture(TEXTURE.papers)
@@ -695,14 +715,16 @@ export class MainScene extends Phaser.Scene {
     this.mug.setPosition(this.profiles.x + MUG_OFFSET.x, this.profiles.y + MUG_OFFSET.y)
     this.machine.setPosition(this.mug.x + MACHINE_OFFSET.x, this.mug.y + MACHINE_OFFSET.y)
     this.steam.setPosition(this.mug.x + STEAM_ANCHOR.x, this.mug.y + STEAM_ANCHOR.y)
+    this.cat.setPosition(personX + CAT_OFFSET.x, personY + CAT_OFFSET.y)
 
-    const place = (i: number, target: Phaser.GameObjects.Image, corner: { x: number; y: number }) => {
+    const place = (i: number, target: { x: number; y: number }, corner: { x: number; y: number }) => {
       const todo = this.todos[i]
       todo.baseY = target.y + corner.y + TODO_NUDGE.y
       todo.icon.setPosition(target.x + corner.x + TODO_NUDGE.x, todo.baseY)
     }
     place(0, this.profiles, TODO_CORNER.papers)
     place(1, this.mug, TODO_CORNER.mug)
+    place(2, this.cat, TODO_CORNER.cat)
 
     const slot = this.toolItems[0].height
     const step = slot + TOOL_GAP

@@ -6,8 +6,11 @@ import {
   DIALOG_BOTTOM_MARGIN,
   DIALOG_HEIGHT,
   DIALOG_LINE_GAP,
+  DIALOG_NAME,
+  DIALOG_PORTRAIT,
   DIALOG_TEXT_COLOR,
   DIALOG_TEXT_PAD,
+  DIALOG_TYPE_MS,
   DIALOG_WIDTH,
 } from './config/dialog'
 import { POPUP_DEPTH } from './config/popup'
@@ -15,6 +18,9 @@ import { addText, inkWidth } from './Text'
 
 export interface DialogOptions {
   parts: [string, string?][]
+  speaker?: string
+  portrait?: string
+  typewriter?: boolean
   onClose?: () => void
 }
 
@@ -41,12 +47,24 @@ export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
       slice,
     )
     .setOrigin(0)
+
+  const portrait = opts.portrait
+    ? scene.add
+        .image(left + width - DIALOG_PORTRAIT.right, top + DIALOG_HEIGHT - DIALOG_PORTRAIT.bottom, opts.portrait)
+        .setOrigin(1, 1)
+    : undefined
+  const inset = portrait ? portrait.width + DIALOG_PORTRAIT.right : 0
+
+  const name = opts.speaker
+    ? addText(scene, left + DIALOG_TEXT_PAD.x, top + DIALOG_NAME.y, opts.speaker, { color: DIALOG_NAME.color }).setOrigin(0)
+    : undefined
+
   const startX = left + DIALOG_TEXT_PAD.x
-  const maxX = left + width - DIALOG_ARROW.right - DIALOG_TEXT_PAD.x / 2
+  const maxX = left + width - inset - DIALOG_ARROW.right - DIALOG_TEXT_PAD.x / 2
   let textX = startX
-  let textY = top + DIALOG_TEXT_PAD.y
+  let textY = name ? name.y + name.height + DIALOG_NAME.gap : top + DIALOG_TEXT_PAD.y
   let atWordStart = true
-  const texts = opts.parts.flatMap(([str, color]) =>
+  const tokens = opts.parts.flatMap(([str, color]) =>
     (str.match(/\S+\s*|\s+/g) ?? []).map((token) => {
       const t = addText(scene, 0, 0, token, { color: color ?? DIALOG_TEXT_COLOR }).setOrigin(0)
       if (atWordStart && textX > startX && textX + inkWidth(token) > maxX) {
@@ -56,14 +74,16 @@ export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
       t.setPosition(textX, textY)
       textX += t.width
       atWordStart = /\s$/.test(token)
-      return t
+      t.setText('').setVisible(false)
+      return { text: t, full: token }
     }),
   )
+  const chars = tokens.flatMap(({ full }, token) => [...full].map((ch) => ({ token, ch })))
 
   const { right, bottom, bobMs } = DIALOG_ARROW
-  const ax = left + width - right
+  const ax = left + width - inset - right
   const ay = top + DIALOG_HEIGHT - bottom
-  const arrow = scene.add.image(ax, ay, TEXTURE.termination)
+  const arrow = scene.add.image(ax, ay, TEXTURE.termination).setVisible(false)
   let raised = false
   const bobTimer = scene.time.addEvent({
     delay: bobMs,
@@ -74,8 +94,34 @@ export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
     },
   })
 
-  container.add([catcher, panel, ...texts, arrow])
-  catcher.once('pointerdown', () => {
+  let shown = 0
+  let typer: Phaser.Time.TimerEvent | undefined
+  const reveal = (count: number) => {
+    shown = count
+    tokens.forEach(({ text, full }, i) => {
+      const n = chars.filter((c, k) => c.token === i && k < count).length
+      text.setVisible(n > 0)
+      if (n > 0 && text.text !== full.slice(0, n)) text.setText(full.slice(0, n))
+    })
+    if (shown >= chars.length) arrow.setVisible(true)
+  }
+  const typeNext = () => {
+    let next = shown + 1
+    while (next < chars.length && /\s/.test(chars[next - 1].ch)) next++
+    reveal(next)
+    if (shown >= chars.length) return
+    typer = scene.time.delayedCall(chars[shown - 1].ch === '.' ? DIALOG_TYPE_MS.dot : DIALOG_TYPE_MS.char, typeNext)
+  }
+  if (opts.typewriter) typeNext()
+  else reveal(chars.length)
+
+  container.add([catcher, panel, ...(name ? [name] : []), ...tokens.map((t) => t.text), ...(portrait ? [portrait] : []), arrow])
+  catcher.on('pointerdown', () => {
+    if (shown < chars.length) {
+      typer?.remove()
+      reveal(chars.length)
+      return
+    }
     bobTimer.remove()
     container.destroy()
     opts.onClose?.()

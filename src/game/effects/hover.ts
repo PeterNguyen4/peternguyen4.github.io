@@ -24,6 +24,45 @@ export function makeHoverable(scene: Phaser.Scene, image: Phaser.GameObjects.Ima
   image.on('pointerout', () => image.setTexture(textureKey))
 }
 
+export function makeHoverableSprite(
+  scene: Phaser.Scene,
+  sprite: Phaser.GameObjects.Sprite,
+  textureKey: string,
+  frameWidth: number,
+  frameHeight: number,
+) {
+  const hoverKey = `${textureKey}${HOVER_SUFFIX}`
+  const mask = buildHoverTexture(scene, textureKey, hoverKey)
+  const sheetWidth = scene.textures.get(textureKey).getSourceImage().width
+  const frames = Math.floor(sheetWidth / frameWidth)
+  const hoverTexture = scene.textures.get(hoverKey)
+  for (let i = 0; i < frames; i++) hoverTexture.add(i, 0, i * frameWidth, 0, frameWidth, frameHeight)
+
+  const frameIndex = () => Number(sprite.frame.name)
+  let hovered = false
+  sprite.setInteractive(
+    new Phaser.Geom.Rectangle(0, 0, frameWidth, frameHeight),
+    (_area: Phaser.Geom.Rectangle, x: number, y: number) =>
+      x >= 0 &&
+      y >= 0 &&
+      x < frameWidth &&
+      y < frameHeight &&
+      mask[(y | 0) * sheetWidth + frameIndex() * frameWidth + (x | 0)] === 1,
+  )
+  sprite.input!.cursor = 'pointer'
+  sprite.on('pointerover', () => {
+    hovered = true
+    sprite.setTexture(hoverKey, frameIndex())
+  })
+  sprite.on('pointerout', () => {
+    hovered = false
+    sprite.setTexture(textureKey, frameIndex())
+  })
+  sprite.on(Phaser.Animations.Events.ANIMATION_UPDATE, (_anim: Phaser.Animations.Animation, frame: Phaser.Animations.AnimationFrame) => {
+    if (hovered) sprite.setTexture(hoverKey, frame.textureFrame)
+  })
+}
+
 function buildHoverTexture(scene: Phaser.Scene, textureKey: string, hoverKey: string) {
   const src = scene.textures.get(textureKey).getSourceImage() as HTMLImageElement
   const mask = new Uint8Array(src.width * src.height)

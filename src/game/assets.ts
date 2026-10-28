@@ -40,6 +40,8 @@ import coffeeTub from '../assets/props/coffee-tub.png'
 import counter from '../assets/props/counter.png'
 import mug from '../assets/props/mug.png'
 import papers from '../assets/props/papers.png'
+import catDialogue from '../assets/props/cat-dialogue.png'
+import catSheet from '../assets/sprites/cat-spritesheet.png'
 import peterProfileSheet from '../assets/sprites/peter-profile-spritesheet.png'
 import rotateSheet from '../assets/sprites/rotate-spritesheet.png'
 import steamSheet from '../assets/sprites/coffee-steam-spritesheet.png'
@@ -49,6 +51,8 @@ export const TEXTURE = {
   banner: 'banner',
   bannerTall: 'banner-tall',
   button: 'button',
+  cat: 'cat',
+  catDialogue: 'cat-dialogue',
   buttonHover: 'button-hover',
   buttonClick: 'button-down',
   dialogue: 'dialogue',
@@ -100,6 +104,7 @@ export const SOUNDS = {
 } as const
 
 export const ANIM = {
+  cat: 'cat',
   handProfile: 'hand-profile',
   steam: 'steam',
   rotate: 'rotate',
@@ -114,6 +119,7 @@ export const IMAGES = {
   [TEXTURE.buttonClick]: buttonClick,
   [TEXTURE.dialogue]: dialogue,
   [TEXTURE.background]: background,
+  [TEXTURE.catDialogue]: catDialogue,
   [TEXTURE.closeButton]: closeButton,
   [TEXTURE.coffee]: coffee,
   [TEXTURE.coffeeBean]: coffeeBeanBullet,
@@ -150,6 +156,7 @@ export const IMAGES = {
 } as const
 
 export const SPRITESHEETS = {
+  [TEXTURE.cat]: { url: catSheet, frameWidth: 64, frameHeight: 48 },
   [TEXTURE.peterProfile]: { url: peterProfileSheet, frameWidth: 128, frameHeight: 128 },
   [TEXTURE.steam]: { url: steamSheet, frameWidth: 32, frameHeight: 32 },
   [TEXTURE.rotate]: { url: rotateSheet, frameWidth: 48, frameHeight: 48 },
