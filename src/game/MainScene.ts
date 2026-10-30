@@ -138,7 +138,6 @@ export class MainScene extends Phaser.Scene {
 
   preload() {
     for (const [key, url] of Object.entries(IMAGES)) this.load.image(key, url)
-    for (const [key, url] of Object.entries(SOUNDS)) this.load.audio(key, url)
     for (const [key, { url, ...frame }] of Object.entries(SPRITESHEETS)) {
       this.load.spritesheet(key, url, frame)
     }
@@ -340,11 +339,19 @@ export class MainScene extends Phaser.Scene {
     })
   }
 
+  private loadMusic() {
+    this.load.audio(AUDIO.music, SOUNDS[AUDIO.music])
+    this.load.once(`filecomplete-audio-${AUDIO.music}`, () => {
+      this.sound.play(AUDIO.music, { loop: true, volume: MUSIC_VOLUME })
+    })
+    this.load.start()
+  }
+
   private addVolumeButton() {
     const { textures } = VOLUME_BUTTON
     this.musicOn = false
     this.sound.mute = !this.musicOn
-    this.sound.play(AUDIO.music, { loop: true, volume: MUSIC_VOLUME })
+    this.loadMusic()
     const frames = () => (this.musicOn ? textures.on : textures.off)
     const showTip = () => {
       this.showTooltipAt(this.musicOn ? 'Music: ON' : 'Music: OFF', this.volumeTipX, this.volumeButton.y, false)
