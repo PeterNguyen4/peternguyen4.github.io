@@ -12,6 +12,7 @@ import {
   ROTATE_OVERLAY,
   ROTATE_TEXT,
   PERSON_POS,
+  PET_ORIGIN_X,
   PROFILE_OFFSET,
   STEAM_ALPHA,
   STEAM_ANCHOR,
@@ -54,7 +55,7 @@ import {
 } from './config/coffee'
 import { ITEM_COLOR } from './config/dialog'
 import { COFFEE_POPUP, DIPLOMA_POPUP, PALETTE, PANEL_SLICE, POPUP_WRAP_PAD, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
-import { CAT_FPS, END_HOLD_MS, HAND_PROFILE_FPS, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
+import { CAT_FPS, END_HOLD_MS, HAND_PROFILE_FPS, PET_DIALOG_DELAY_MS, PET_FPS, PET_FRAMES, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
   TOOL_ICONS,
@@ -102,6 +103,9 @@ export class MainScene extends Phaser.Scene {
   private bg!: Phaser.GameObjects.Image
   private counter!: Phaser.GameObjects.Image
   private person!: Phaser.GameObjects.Sprite
+  private personPet!: Phaser.GameObjects.Sprite
+  private petting = false
+  private onPetDone?: () => void
   private profiles!: Phaser.GameObjects.Image
   private mug!: Phaser.GameObjects.Image
   private machine!: Phaser.GameObjects.Image
@@ -144,6 +148,7 @@ export class MainScene extends Phaser.Scene {
     this.bg = this.add.image(0, 0, TEXTURE.background).setOrigin(0.5).setDepth(0)
     this.diploma = this.add.image(0, 0, TEXTURE.diplomaWall).setDepth(1)
     this.person = this.add.sprite(0, 0, TEXTURE.peterProfile, 0).setOrigin(0.5, 1).setDepth(4)
+    this.personPet = this.add.sprite(0, 0, TEXTURE.peterPet, 0).setOrigin(PET_ORIGIN_X, 1).setDepth(4).setVisible(false)
     this.counter = this.add.image(0, 0, TEXTURE.counter).setOrigin(0.5, 1).setDepth(2)
     this.counter.setCrop(0, 0, this.counter.width, this.counter.height - COUNTER_DROP)
     this.profiles = this.add.image(0, 0, TEXTURE.papers).setDepth(3)
@@ -213,8 +218,13 @@ export class MainScene extends Phaser.Scene {
     })
     makeHoverableSprite(this, this.cat, TEXTURE.cat, SPRITESHEETS[TEXTURE.cat].frameWidth, SPRITESHEETS[TEXTURE.cat].frameHeight)
     this.cat.on('pointerdown', () => {
+      if (this.petting) return
       this.removeTodo(2)
-      showDialog(this, { parts: [['...']], speaker: 'Cat', portrait: TEXTURE.catDialogue, typewriter: true, bottom: this.sceneBottom })
+      this.petCat(() =>
+        this.time.delayedCall(PET_DIALOG_DELAY_MS, () =>
+          showDialog(this, { parts: [['...']], speaker: 'Cat', portrait: TEXTURE.catDialogue, typewriter: true, bottom: this.sceneBottom }),
+        ),
+      )
     })
     this.mug.on('pointerdown', () => {
       this.removeTodo(1)
@@ -227,6 +237,19 @@ export class MainScene extends Phaser.Scene {
       key: ANIM.handProfile,
       frames: this.anims.generateFrameNumbers(TEXTURE.peterProfile, { start: 0, end: 11 }),
       frameRate: HAND_PROFILE_FPS,
+    })
+
+    this.anims.create({
+      key: ANIM.petCat,
+      frames: this.anims.generateFrameNumbers(TEXTURE.peterPet, { start: 0, end: PET_FRAMES - 1 }),
+      frameRate: PET_FPS,
+    })
+    this.personPet.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM.petCat, () => {
+      this.personPet.setVisible(false)
+      this.person.setVisible(true)
+      this.petting = false
+      this.onPetDone?.()
+      this.onPetDone = undefined
     })
 
     this.anims.create({
@@ -356,6 +379,13 @@ export class MainScene extends Phaser.Scene {
         this.hopTodo(todo, Phaser.Math.Between(TODO_PAUSE_MS.min, TODO_PAUSE_MS.max))
       })
     })
+  }
+
+  private petCat(onDone: () => void) {
+    this.petting = true
+    this.onPetDone = onDone
+    this.person.setVisible(false)
+    this.personPet.setVisible(true).play(ANIM.petCat)
   }
 
   private removeTodo(i: number) {
@@ -824,6 +854,7 @@ export class MainScene extends Phaser.Scene {
     const personX = left + PERSON_POS.x
     const personY = top + PERSON_POS.y
     this.person.setPosition(personX, personY)
+    this.personPet.setPosition(personX, personY)
 
     this.profiles.setPosition(personX + PROFILE_OFFSET.x, personY + PROFILE_OFFSET.y)
     this.mug.setPosition(this.profiles.x + MUG_OFFSET.x, this.profiles.y + MUG_OFFSET.y)

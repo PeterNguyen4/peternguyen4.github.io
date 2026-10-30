@@ -46,6 +46,7 @@ import heart from '../assets/icons/heart.png'
 import catDialogue from '../assets/props/cat-dialogue.png'
 import catSheet from '../assets/sprites/cat-spritesheet.png'
 import peterProfileSheet from '../assets/sprites/peter-profile-spritesheet.png'
+import peterPetSheet from '../assets/sprites/peter-pet-spritesheet.png'
 import rotateSheet from '../assets/sprites/rotate-spritesheet.png'
 import steamSheet from '../assets/sprites/coffee-steam-spritesheet.png'
 
@@ -80,6 +81,7 @@ export const TEXTURE = {
   postgresql: 'postgresql',
   profileIcon: 'profile-icon',
   papers: 'papers',
+  peterPet: 'peter-pet',
   peterProfile: 'peter-profile',
   python: 'python',
   star: 'star',
@@ -112,6 +114,7 @@ export const SOUNDS = {
 export const ANIM = {
   cat: 'cat',
   handProfile: 'hand-profile',
+  petCat: 'pet-cat',
   steam: 'steam',
   rotate: 'rotate',
 } as const
@@ -166,6 +169,7 @@ export const IMAGES = {
 
 export const SPRITESHEETS = {
   [TEXTURE.cat]: { url: catSheet, frameWidth: 64, frameHeight: 48 },
+  [TEXTURE.peterPet]: { url: peterPetSheet, frameWidth: 192, frameHeight: 128 },
   [TEXTURE.peterProfile]: { url: peterProfileSheet, frameWidth: 128, frameHeight: 128 },
   [TEXTURE.steam]: { url: steamSheet, frameWidth: 32, frameHeight: 32 },
   [TEXTURE.rotate]: { url: rotateSheet, frameWidth: 48, frameHeight: 48 },
