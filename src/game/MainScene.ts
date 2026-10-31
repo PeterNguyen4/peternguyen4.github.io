@@ -777,16 +777,23 @@ export class MainScene extends Phaser.Scene {
       face.forEach((o, i) => (o.y = restY[i] + (pressed ? pressDepth : 0)))
     }
     const hold = createPressHold(this)
+    let pressed = false
     cta
       .setSize(btnW, btnH)
       .setInteractive({ useHandCursor: true })
       .on('pointerover', () => setState(TEXTURE.buttonHover, false))
-      .on('pointerout', () => hold.release(() => setState(TEXTURE.button, false)))
+      .on('pointerout', () => {
+        pressed = false
+        hold.release(() => setState(TEXTURE.button, false))
+      })
       .on('pointerdown', () => {
+        pressed = true
         hold.down()
         setState(TEXTURE.buttonClick, true)
       })
       .on('pointerup', () => {
+        if (!pressed) return
+        pressed = false
         hold.release(() => setState(TEXTURE.buttonHover, false))
         onClick()
       })
