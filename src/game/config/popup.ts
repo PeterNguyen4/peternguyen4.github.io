@@ -17,10 +17,7 @@ export const POPUP_WRAP_PAD = 8
 export const POPUP_MARGIN = 8
 export const POPUP_BOTTOM_PAD = 12
 
-export const CLOSE_PLATE = { x0: 4, y0: 4, x1: 10, y1: 10 }
-export const CLOSE_HOVER_MULT = [0.88, 0.82, 0.72]
-export const CLOSE_HOVER_KEY = 'close-button-hover'
-export const CLOSE_OFFSET = { x: -17, y: 3 }
+export const CLOSE_OFFSET = { x: -24, y: 10 }
 
 export const PROFILE_POPUP = { width: 330, height: 200 }
 export const PROFILE_LAYOUT = {

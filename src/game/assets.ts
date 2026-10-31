@@ -21,7 +21,9 @@ import bannerTall from '../assets/ui/banner-tall.png'
 import dialogue from '../assets/ui/dialogue.png'
 import termination from '../assets/ui/termination.png'
 import stats from '../assets/ui/stats.png'
-import closeButton from '../assets/ui/nine-slice-close-btn.png'
+import closeButton from '../assets/ui/close-btn.png'
+import closeButtonHover from '../assets/ui/close-button-hover.png'
+import closeButtonClick from '../assets/ui/close-btn-click.png'
 import panel from '../assets/ui/nine-slice.png'
 import toolItemFocus from '../assets/ui/tool-item-focus.png'
 import star from '../assets/icons/star.png'
@@ -65,6 +67,8 @@ export const TEXTURE = {
   heart: 'heart',
   background: 'background',
   closeButton: 'close-button',
+  closeButtonHover: 'close-button-hover',
+  closeButtonClick: 'close-button-click',
   coffee: 'coffee',
   coffeeBean: 'coffee-bean',
   coffeeMachine: 'coffee-machine',
@@ -133,6 +137,8 @@ export const IMAGES = {
   [TEXTURE.background]: background,
   [TEXTURE.catDialogue]: catDialogue,
   [TEXTURE.closeButton]: closeButton,
+  [TEXTURE.closeButtonHover]: closeButtonHover,
+  [TEXTURE.closeButtonClick]: closeButtonClick,
   [TEXTURE.coffee]: coffee,
   [TEXTURE.coffeeBean]: coffeeBeanBullet,
   [TEXTURE.coffeeMachine]: coffeeMachine,

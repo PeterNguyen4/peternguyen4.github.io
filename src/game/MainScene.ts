@@ -82,6 +82,7 @@ import { makeHoverable, makeHoverableSprite } from './effects/hover'
 import { addBanner, BANNER_STYLE, BANNER_TALL_STYLE } from './Banner'
 import { showDialog } from './Dialog'
 import { showPopup } from './Popup'
+import { createPressHold } from './PressHold'
 import { STAR_COUNT, STAR_GAP } from './config/rating'
 import { addStars } from './Rating'
 import { addText, inkWidth } from './Text'
@@ -176,15 +177,17 @@ export class MainScene extends Phaser.Scene {
         item.setTexture(TEXTURE.toolItemFocus)
         this.showTooltip(i)
       })
+      const hold = createPressHold(this)
+      item.on('pointerdown', () => hold.down())
       item.on('pointerout', () => {
-        item.setTexture(TEXTURE.toolItem)
+        hold.release(() => item.setTexture(TEXTURE.toolItem))
         this.hideTooltip()
       })
       const link = TOOL_LINKS[i]
       if (link) {
-        item.on('pointerdown', () => {
+        item.on('pointerup', () => {
           window.open(link, '_blank', 'noopener,noreferrer')
-          item.setTexture(TEXTURE.toolItem)
+          hold.release(() => item.setTexture(TEXTURE.toolItem))
           this.hideTooltip()
         })
       }
@@ -357,6 +360,7 @@ export class MainScene extends Phaser.Scene {
       this.showTooltipAt(this.musicOn ? 'Music: ON' : 'Music: OFF', this.volumeTipX, this.volumeButton.y, false)
     }
     this.volumeButton = this.add.image(0, 0, textures.off.base).setDepth(5.5)
+    const hold = createPressHold(this)
     this.volumeButton
       .setInteractive({ useHandCursor: true })
       .on('pointerover', () => {
@@ -364,14 +368,17 @@ export class MainScene extends Phaser.Scene {
         showTip()
       })
       .on('pointerout', () => {
-        this.volumeButton.setTexture(frames().base)
+        hold.release(() => this.volumeButton.setTexture(frames().base))
         this.hideTooltip()
       })
-      .on('pointerdown', () => this.volumeButton.setTexture(frames().click))
+      .on('pointerdown', () => {
+        hold.down()
+        this.volumeButton.setTexture(frames().click)
+      })
       .on('pointerup', () => {
         this.musicOn = !this.musicOn
         this.sound.mute = !this.musicOn
-        this.volumeButton.setTexture(frames().hover)
+        hold.release(() => this.volumeButton.setTexture(frames().hover))
         showTip()
       })
   }
@@ -412,6 +419,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private showTooltipAt(label: string, edgeX: number, y: number, hasArrow: boolean, centered = false) {
+    if (!window.matchMedia('(hover: hover)').matches) return
     this.tooltipLabel.setText(label)
     const fullW = this.tooltipLabel.width
     const labelW = inkWidth(label)
@@ -764,17 +772,22 @@ export class MainScene extends Phaser.Scene {
     const restY = [COFFEE_CTA.labelOffsetY, COFFEE_CTA.arrowOffsetY]
     face.forEach((o, i) => (o.y = restY[i]))
     const setState = (texture: string, pressed: boolean) => {
+      if (!cta.active) return
       button.setTexture(texture)
       face.forEach((o, i) => (o.y = restY[i] + (pressed ? pressDepth : 0)))
     }
+    const hold = createPressHold(this)
     cta
       .setSize(btnW, btnH)
       .setInteractive({ useHandCursor: true })
       .on('pointerover', () => setState(TEXTURE.buttonHover, false))
-      .on('pointerout', () => setState(TEXTURE.button, false))
-      .on('pointerdown', () => setState(TEXTURE.buttonClick, true))
+      .on('pointerout', () => hold.release(() => setState(TEXTURE.button, false)))
+      .on('pointerdown', () => {
+        hold.down()
+        setState(TEXTURE.buttonClick, true)
+      })
       .on('pointerup', () => {
-        setState(TEXTURE.buttonHover, false)
+        hold.release(() => setState(TEXTURE.buttonHover, false))
         onClick()
       })
     container.add(cta)

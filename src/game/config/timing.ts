@@ -12,3 +12,4 @@ export const ROTATE_FPS = 8
 export const ROTATE_PLAYS = 3
 export const ROTATE_FADE_MS = 400
 export const ROTATE_REPEAT_DELAY_MS = 700
+export const MIN_PRESS_MS = 90
