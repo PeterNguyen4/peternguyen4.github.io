@@ -1,10 +1,7 @@
 import Phaser from 'phaser'
 import { TEXTURE } from './assets'
 import {
-  CLOSE_HOVER_KEY,
-  CLOSE_HOVER_MULT,
   CLOSE_OFFSET,
-  CLOSE_PLATE,
   PALETTE,
   PANEL_SLICE,
   POPUP_BODY_LINE_SPACING,
@@ -16,6 +13,7 @@ import {
   POPUP_TITLE_TOP,
   POPUP_WRAP_PAD,
 } from './config/popup'
+import { createPressHold } from './PressHold'
 import { addText } from './Text'
 
 export interface PopupOptions {
@@ -25,22 +23,6 @@ export interface PopupOptions {
   width: number
   height: number
   onClose?: () => void
-}
-
-function ensureCloseHoverTexture(scene: Phaser.Scene) {
-  if (scene.textures.exists(CLOSE_HOVER_KEY)) return
-  const src = scene.textures.get(TEXTURE.closeButton).getSourceImage() as HTMLImageElement
-  const canvas = scene.textures.createCanvas(CLOSE_HOVER_KEY, src.width, src.height)
-  if (!canvas) return
-  const ctx = canvas.getContext()
-  ctx.drawImage(src, 0, 0)
-  const { x0, y0, x1, y1 } = CLOSE_PLATE
-  const plate = ctx.getImageData(x0, y0, x1 - x0 + 1, y1 - y0 + 1)
-  for (let i = 0; i < plate.data.length; i += 4) {
-    for (let c = 0; c < 3; c++) plate.data[i + c] *= CLOSE_HOVER_MULT[c]
-  }
-  ctx.putImageData(plate, x0, y0)
-  canvas.refresh()
 }
 
 export function showPopup(scene: Phaser.Scene, opts: PopupOptions) {
@@ -60,7 +42,6 @@ export function showPopup(scene: Phaser.Scene, opts: PopupOptions) {
 }
 
 function buildPopup(scene: Phaser.Scene, opts: PopupOptions, onClose: () => void) {
-  ensureCloseHoverTexture(scene)
   const { width: W, height: H } = scene.scale
   const width = Math.min(opts.width, W - 2 * POPUP_MARGIN)
   const compact = width < opts.width
@@ -92,6 +73,9 @@ function buildPopup(scene: Phaser.Scene, opts: PopupOptions, onClose: () => void
       wordWrap: { width: wrap },
     })
     .setOrigin(0.5, topAligned ? 0 : 0.5)
+  let pressed = false
+  let closing = false
+  const hold = createPressHold(scene)
   const close = scene.add
     .image(
       left + width + CLOSE_OFFSET.x,
@@ -100,8 +84,22 @@ function buildPopup(scene: Phaser.Scene, opts: PopupOptions, onClose: () => void
     )
     .setOrigin(0)
     .setInteractive({ useHandCursor: true })
-    .on('pointerover', () => close.setTexture(CLOSE_HOVER_KEY))
-    .on('pointerout', () => close.setTexture(TEXTURE.closeButton))
+    .on('pointerover', () => close.setTexture(TEXTURE.closeButtonHover))
+    .on('pointerout', () => {
+      if (closing) return
+      pressed = false
+      close.setTexture(TEXTURE.closeButton)
+    })
+    .on('pointerdown', () => {
+      pressed = true
+      hold.down()
+      close.setTexture(TEXTURE.closeButtonClick)
+    })
+    .on('pointerup', () => {
+      if (!pressed) return
+      closing = true
+      hold.release(dismiss)
+    })
   box.add([panel, title, close])
   container.add([dim, box])
   const bottom = opts.content?.(
@@ -137,6 +135,5 @@ function buildPopup(scene: Phaser.Scene, opts: PopupOptions, onClose: () => void
     container.destroy()
     onClose()
   }
-  close.once('pointerdown', dismiss)
   return { dismiss, destroy: () => container.destroy() }
 }
