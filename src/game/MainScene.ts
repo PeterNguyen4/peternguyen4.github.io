@@ -53,7 +53,7 @@ import {
   ICON_GAP,
   NIGHT_COLOR,
 } from './config/coffee'
-import { ITEM_COLOR } from './config/dialog'
+import { ITEM_COLOR, ITEM_PICKUP_VOLUME } from './config/dialog'
 import { COFFEE_POPUP, DIPLOMA_POPUP, PALETTE, PANEL_SLICE, POPUP_WRAP_PAD, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
 import { CAT_FPS, END_HOLD_MS, HAND_PROFILE_FPS, PET_DIALOG_DELAY_MS, PET_FPS, PET_FRAMES, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
@@ -78,7 +78,7 @@ import {
   VOLUME_BUTTON,
 } from './config/toolbar'
 import { TOOL_GLOW_DELAY_MS, TOOL_GLOW_MS, TOOL_POP_HOLD_MS, TOOL_POP_SCALE, TOOL_RUMBLE_PX, TOOL_RUMBLE_STEP_MS, TOOL_RUMBLE_X } from './effects/easing'
-import { makeHoverable, makeHoverableSprite } from './effects/hover'
+import { makeHoverable, makeHoverableSprite, playHoverSound } from './effects/hover'
 import { addBanner, BANNER_STYLE, BANNER_TALL_STYLE } from './Banner'
 import { showDialog } from './Dialog'
 import { showPopup } from './Popup'
@@ -175,6 +175,7 @@ export class MainScene extends Phaser.Scene {
       item.setInteractive({ cursor: i < TOOL_ICONS.length ? 'pointer' : 'default' })
       item.on('pointerover', () => {
         item.setTexture(TEXTURE.toolItemFocus)
+        playHoverSound(this)
         this.showTooltip(i)
       })
       const hold = createPressHold(this)
@@ -344,6 +345,11 @@ export class MainScene extends Phaser.Scene {
 
   private loadMusic() {
     this.load.audio(AUDIO.music, SOUNDS[AUDIO.music])
+    this.load.audio(AUDIO.dialogue, SOUNDS[AUDIO.dialogue])
+    this.load.audio(AUDIO.hover, SOUNDS[AUDIO.hover])
+    this.load.audio(AUDIO.itemPickup, SOUNDS[AUDIO.itemPickup])
+    this.load.audio(AUDIO.popupOpen, SOUNDS[AUDIO.popupOpen])
+    this.load.audio(AUDIO.popupClose, SOUNDS[AUDIO.popupClose])
     this.load.once(`filecomplete-audio-${AUDIO.music}`, () => {
       this.sound.play(AUDIO.music, { loop: true, volume: MUSIC_VOLUME })
     })
@@ -365,6 +371,7 @@ export class MainScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerover', () => {
         this.volumeButton.setTexture(frames().hover)
+        playHoverSound(this)
         showTip()
       })
       .on('pointerout', () => {
@@ -473,6 +480,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private showObtained(item: string, color: string, onClose: () => void) {
+    if (this.cache.audio.exists(AUDIO.itemPickup)) this.sound.play(AUDIO.itemPickup, { volume: ITEM_PICKUP_VOLUME })
     showDialog(this, { parts: [['You obtained '], [item, color], ['!']], onClose, bottom: this.sceneBottom })
   }
 
@@ -781,7 +789,10 @@ export class MainScene extends Phaser.Scene {
     cta
       .setSize(btnW, btnH)
       .setInteractive({ useHandCursor: true })
-      .on('pointerover', () => setState(TEXTURE.buttonHover, false))
+      .on('pointerover', () => {
+        setState(TEXTURE.buttonHover, false)
+        playHoverSound(this)
+      })
       .on('pointerout', () => {
         pressed = false
         hold.release(() => setState(TEXTURE.button, false))

@@ -16,6 +16,7 @@ export const POPUP_CONTENT_GAP = 10
 export const POPUP_WRAP_PAD = 8
 export const POPUP_MARGIN = 8
 export const POPUP_BOTTOM_PAD = 12
+export const POPUP_SFX_VOLUME = 0.3
 
 export const CLOSE_OFFSET = { x: -24, y: 10 }
 

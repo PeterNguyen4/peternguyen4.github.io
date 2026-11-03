@@ -1,10 +1,12 @@
 import Phaser from 'phaser'
-import { TEXTURE } from './assets'
+import { AUDIO, TEXTURE } from './assets'
 import {
   DIALOG_ARROW,
+  DIALOG_BLIP_VOLUME,
   DIALOG_PANEL,
   DIALOG_BOTTOM_MARGIN,
   DIALOG_HEIGHT,
+  DIALOG_LABEL,
   DIALOG_LINE_GAP,
   DIALOG_NAME,
   DIALOG_PORTRAIT,
@@ -23,6 +25,17 @@ export interface DialogOptions {
   typewriter?: boolean
   bottom?: number
   onClose?: () => void
+}
+
+function createLabel(scene: Phaser.Scene, speaker: string, left: number, top: number) {
+  const { slice, height, padX, textY, x, overlap } = DIALOG_LABEL
+  const labelWidth = inkWidth(speaker) + padX * 2
+  const labelTop = top - height + overlap
+  const bg = scene.add
+    .nineslice(left + x, labelTop, TEXTURE.dialogueLabel, undefined, labelWidth, height, slice, slice, slice, slice)
+    .setOrigin(0)
+  const text = addText(scene, left + x + padX, labelTop + textY, speaker, { color: DIALOG_NAME.color }).setOrigin(0)
+  return [bg, text]
 }
 
 export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
@@ -56,14 +69,12 @@ export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
     : undefined
   const inset = portrait ? portrait.width + DIALOG_PORTRAIT.right : 0
 
-  const name = opts.speaker
-    ? addText(scene, left + DIALOG_TEXT_PAD.x, top + DIALOG_NAME.y, opts.speaker, { color: DIALOG_NAME.color }).setOrigin(0)
-    : undefined
+  const labelParts = opts.speaker ? createLabel(scene, opts.speaker, left, top) : []
 
   const startX = left + DIALOG_TEXT_PAD.x
   const maxX = left + width - inset - DIALOG_ARROW.right - DIALOG_TEXT_PAD.x / 2
   let textX = startX
-  let textY = name ? name.y + name.height + DIALOG_NAME.gap : top + DIALOG_TEXT_PAD.y
+  let textY = top + DIALOG_TEXT_PAD.y
   let atWordStart = true
   const tokens = opts.parts.flatMap(([str, color]) =>
     (str.match(/\S+\s*|\s+/g) ?? []).map((token) => {
@@ -95,6 +106,10 @@ export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
     },
   })
 
+  const blip = opts.typewriter && scene.cache.audio.exists(AUDIO.dialogue)
+    ? scene.sound.add(AUDIO.dialogue, { volume: DIALOG_BLIP_VOLUME })
+    : undefined
+
   let shown = 0
   let typer: Phaser.Time.TimerEvent | undefined
   const reveal = (count: number) => {
@@ -110,20 +125,23 @@ export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
     let next = shown + 1
     while (next < chars.length && /\s/.test(chars[next - 1].ch)) next++
     reveal(next)
+    if (shown === 1 || /\s/.test(chars[shown - 2].ch)) blip?.play()
     if (shown >= chars.length) return
     typer = scene.time.delayedCall(chars[shown - 1].ch === '.' ? DIALOG_TYPE_MS.dot : DIALOG_TYPE_MS.char, typeNext)
   }
   if (opts.typewriter) typeNext()
   else reveal(chars.length)
 
-  container.add([catcher, panel, ...(name ? [name] : []), ...tokens.map((t) => t.text), ...(portrait ? [portrait] : []), arrow])
+  container.add([catcher, panel, ...labelParts,...tokens.map((t) => t.text), ...(portrait ? [portrait] : []), arrow])
   catcher.on('pointerdown', () => {
     if (shown < chars.length) {
       typer?.remove()
+      blip?.stop()
       reveal(chars.length)
       return
     }
     bobTimer.remove()
+    blip?.destroy()
     container.destroy()
     opts.onClose?.()
   })

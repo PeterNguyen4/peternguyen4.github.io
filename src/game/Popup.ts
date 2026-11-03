@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { TEXTURE } from './assets'
+import { AUDIO, TEXTURE } from './assets'
 import {
   CLOSE_OFFSET,
   PALETTE,
@@ -10,9 +10,11 @@ import {
   POPUP_DEPTH,
   POPUP_DIM_ALPHA,
   POPUP_MARGIN,
+  POPUP_SFX_VOLUME,
   POPUP_TITLE_TOP,
   POPUP_WRAP_PAD,
 } from './config/popup'
+import { playHoverSound } from './effects/hover'
 import { createPressHold } from './PressHold'
 import { addText } from './Text'
 
@@ -25,7 +27,12 @@ export interface PopupOptions {
   onClose?: () => void
 }
 
+function playSfx(scene: Phaser.Scene, key: string) {
+  if (scene.cache.audio.exists(key)) scene.sound.play(key, { volume: POPUP_SFX_VOLUME })
+}
+
 export function showPopup(scene: Phaser.Scene, opts: PopupOptions) {
+  playSfx(scene, AUDIO.popupOpen)
   let current = buildPopup(scene, opts, () => {
     scene.scale.off(Phaser.Scale.Events.RESIZE, rebuild)
     opts.onClose?.()
@@ -84,7 +91,10 @@ function buildPopup(scene: Phaser.Scene, opts: PopupOptions, onClose: () => void
     )
     .setOrigin(0)
     .setInteractive({ useHandCursor: true })
-    .on('pointerover', () => close.setTexture(TEXTURE.closeButtonHover))
+    .on('pointerover', () => {
+      close.setTexture(TEXTURE.closeButtonHover)
+      playHoverSound(scene)
+    })
     .on('pointerout', () => {
       if (closing) return
       pressed = false
@@ -132,6 +142,7 @@ function buildPopup(scene: Phaser.Scene, opts: PopupOptions, onClose: () => void
   const dismiss = () => {
     if (closed) return
     closed = true
+    playSfx(scene, AUDIO.popupClose)
     container.destroy()
     onClose()
   }
