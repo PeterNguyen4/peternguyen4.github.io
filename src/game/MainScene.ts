@@ -219,7 +219,7 @@ export class MainScene extends Phaser.Scene {
       this.removeTodo(3)
       this.showDiploma()
     })
-    makeHoverableSprite(this, this.cat, TEXTURE.cat, SPRITESHEETS[TEXTURE.cat].frameWidth, SPRITESHEETS[TEXTURE.cat].frameHeight)
+    makeHoverableSprite(this, this.cat, TEXTURE.cat, SPRITESHEETS[TEXTURE.cat].frameWidth, SPRITESHEETS[TEXTURE.cat].frameHeight, () => this.petting)
     this.cat.on('pointerdown', () => {
       if (this.petting) return
       this.removeTodo(2)
@@ -868,6 +868,7 @@ export class MainScene extends Phaser.Scene {
 
     this.portrait = W < H
     this.horizontalBar = this.portrait || H > this.bg.height
+    this.game.canvas.closest('.game-frame')?.classList.toggle('letterboxed', this.horizontalBar)
     if (this.rotateHint) {
       this.rotateHint.dim.setSize(W, H)
       this.rotateHint.dim.input?.hitArea.setSize(W, H)

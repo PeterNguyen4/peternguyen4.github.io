@@ -14,8 +14,10 @@ import {
 } from '../config/hover'
 
 let lastHoverSfx = 0
+const canHover = typeof window.matchMedia === 'function' && window.matchMedia('(hover: hover)').matches
 
 export function playHoverSound(scene: Phaser.Scene) {
+  if (!canHover) return
   const now = scene.time.now
   if (now - lastHoverSfx < HOVER_SFX_COOLDOWN_MS || !scene.cache.audio.exists(AUDIO.hover)) return
   lastHoverSfx = now
@@ -32,6 +34,7 @@ export function makeHoverable(scene: Phaser.Scene, image: Phaser.GameObjects.Ima
       x >= 0 && y >= 0 && x < width && y < height && mask[(y | 0) * width + (x | 0)] === 1,
   )
   image.input!.cursor = 'pointer'
+  if (!canHover) return
   image.on('pointerover', () => {
     image.setTexture(hoverKey)
     playHoverSound(scene)
@@ -45,6 +48,7 @@ export function makeHoverableSprite(
   textureKey: string,
   frameWidth: number,
   frameHeight: number,
+  isDisabled: () => boolean = () => false,
 ) {
   const hoverKey = `${textureKey}${HOVER_SUFFIX}`
   const mask = buildHoverTexture(scene, textureKey, hoverKey)
@@ -54,7 +58,8 @@ export function makeHoverableSprite(
   for (let i = 0; i < frames; i++) hoverTexture.add(i, 0, i * frameWidth, 0, frameWidth, frameHeight)
 
   const frameIndex = () => Number(sprite.frame.name)
-  let hovered = false
+  let over = false
+  const showHover = () => over && !isDisabled()
   sprite.setInteractive(
     new Phaser.Geom.Rectangle(0, 0, frameWidth, frameHeight),
     (_area: Phaser.Geom.Rectangle, x: number, y: number) =>
@@ -65,17 +70,19 @@ export function makeHoverableSprite(
       mask[(y | 0) * sheetWidth + frameIndex() * frameWidth + (x | 0)] === 1,
   )
   sprite.input!.cursor = 'pointer'
+  if (!canHover) return
   sprite.on('pointerover', () => {
-    hovered = true
+    over = true
+    if (isDisabled()) return
     sprite.setTexture(hoverKey, frameIndex())
     playHoverSound(scene)
   })
   sprite.on('pointerout', () => {
-    hovered = false
+    over = false
     sprite.setTexture(textureKey, frameIndex())
   })
   sprite.on(Phaser.Animations.Events.ANIMATION_UPDATE, (_anim: Phaser.Animations.Animation, frame: Phaser.Animations.AnimationFrame) => {
-    if (hovered) sprite.setTexture(hoverKey, frame.textureFrame)
+    sprite.setTexture(showHover() ? hoverKey : textureKey, frame.textureFrame)
   })
 }
 
