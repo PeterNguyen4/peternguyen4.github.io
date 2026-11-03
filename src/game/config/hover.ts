@@ -6,3 +6,5 @@ export const FILL_MIX = 0.2
 export const BAND_MIX = 0.4
 export const BAND_WIDTH = 1
 export const OUTLINE_LUMA = 70
+export const HOVER_SFX_VOLUME = 0.1
+export const HOVER_SFX_COOLDOWN_MS = 60

@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { AUDIO } from '../assets'
 import {
   BAND_MIX,
   BAND_WIDTH,
@@ -6,9 +7,20 @@ import {
   HOVER_BAND,
   HOVER_FILL,
   HOVER_OUTLINE,
+  HOVER_SFX_COOLDOWN_MS,
+  HOVER_SFX_VOLUME,
   HOVER_SUFFIX,
   OUTLINE_LUMA,
 } from '../config/hover'
+
+let lastHoverSfx = 0
+
+export function playHoverSound(scene: Phaser.Scene) {
+  const now = scene.time.now
+  if (now - lastHoverSfx < HOVER_SFX_COOLDOWN_MS || !scene.cache.audio.exists(AUDIO.hover)) return
+  lastHoverSfx = now
+  scene.sound.play(AUDIO.hover, { volume: HOVER_SFX_VOLUME })
+}
 
 export function makeHoverable(scene: Phaser.Scene, image: Phaser.GameObjects.Image, textureKey: string, outlineDepth = Infinity) {
   const hoverKey = `${textureKey}${HOVER_SUFFIX}`
@@ -20,7 +32,10 @@ export function makeHoverable(scene: Phaser.Scene, image: Phaser.GameObjects.Ima
       x >= 0 && y >= 0 && x < width && y < height && mask[(y | 0) * width + (x | 0)] === 1,
   )
   image.input!.cursor = 'pointer'
-  image.on('pointerover', () => image.setTexture(hoverKey))
+  image.on('pointerover', () => {
+    image.setTexture(hoverKey)
+    playHoverSound(scene)
+  })
   image.on('pointerout', () => image.setTexture(textureKey))
 }
 
@@ -53,6 +68,7 @@ export function makeHoverableSprite(
   sprite.on('pointerover', () => {
     hovered = true
     sprite.setTexture(hoverKey, frameIndex())
+    playHoverSound(scene)
   })
   sprite.on('pointerout', () => {
     hovered = false
