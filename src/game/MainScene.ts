@@ -344,6 +344,7 @@ export class MainScene extends Phaser.Scene {
 
   private loadMusic() {
     this.load.audio(AUDIO.music, SOUNDS[AUDIO.music])
+    this.load.audio(AUDIO.dialogue, SOUNDS[AUDIO.dialogue])
     this.load.once(`filecomplete-audio-${AUDIO.music}`, () => {
       this.sound.play(AUDIO.music, { loop: true, volume: MUSIC_VOLUME })
     })

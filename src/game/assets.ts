@@ -1,4 +1,5 @@
 import music from '../assets/audio/byte_roast.mp3'
+import dialogueBlip from '../assets/audio/dialogue.mp3'
 import background from '../assets/backgrounds/background.png'
 import arrow from '../assets/icons/arrow-up-right.png'
 import coffee from '../assets/icons/coffee.png'
@@ -19,6 +20,7 @@ import inset from '../assets/ui/inset.png'
 import banner from '../assets/ui/banner.png'
 import bannerTall from '../assets/ui/banner-tall.png'
 import dialogue from '../assets/ui/dialogue.png'
+import dialogueLabel from '../assets/ui/dialogue-label.png'
 import termination from '../assets/ui/termination.png'
 import stats from '../assets/ui/stats.png'
 import closeButton from '../assets/ui/close-btn.png'
@@ -62,6 +64,7 @@ export const TEXTURE = {
   buttonHover: 'button-hover',
   buttonClick: 'button-down',
   dialogue: 'dialogue',
+  dialogueLabel: 'dialogue-label',
   diplomaItem: 'diploma-item',
   diplomaWall: 'diploma-wall',
   heart: 'heart',
@@ -109,10 +112,12 @@ export const TEXTURE = {
 
 export const AUDIO = {
   music: 'music',
+  dialogue: 'dialogue',
 } as const
 
 export const SOUNDS = {
   [AUDIO.music]: music,
+  [AUDIO.dialogue]: dialogueBlip,
 } as const
 
 export const ANIM = {
@@ -131,6 +136,7 @@ export const IMAGES = {
   [TEXTURE.buttonHover]: buttonHover,
   [TEXTURE.buttonClick]: buttonClick,
   [TEXTURE.dialogue]: dialogue,
+  [TEXTURE.dialogueLabel]: dialogueLabel,
   [TEXTURE.diplomaItem]: diplomaItem,
   [TEXTURE.diplomaWall]: diplomaWall,
   [TEXTURE.heart]: heart,
