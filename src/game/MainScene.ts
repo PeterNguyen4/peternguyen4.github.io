@@ -53,7 +53,7 @@ import {
   ICON_GAP,
   NIGHT_COLOR,
 } from './config/coffee'
-import { ITEM_COLOR, ITEM_PICKUP_VOLUME } from './config/dialog'
+import { ITEM_COLOR, ITEM_PICKUP_VOLUME, THUD_VOLUME } from './config/dialog'
 import { COFFEE_POPUP, DIPLOMA_POPUP, PALETTE, PANEL_SLICE, POPUP_WRAP_PAD, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
 import { CAT_FPS, END_HOLD_MS, HAND_PROFILE_FPS, PET_DIALOG_DELAY_MS, PET_FPS, PET_FRAMES, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
@@ -350,6 +350,7 @@ export class MainScene extends Phaser.Scene {
     this.load.audio(AUDIO.itemPickup, SOUNDS[AUDIO.itemPickup])
     this.load.audio(AUDIO.popupOpen, SOUNDS[AUDIO.popupOpen])
     this.load.audio(AUDIO.popupClose, SOUNDS[AUDIO.popupClose])
+    this.load.audio(AUDIO.thud, SOUNDS[AUDIO.thud])
     this.load.once(`filecomplete-audio-${AUDIO.music}`, () => {
       this.sound.play(AUDIO.music, { loop: true, volume: MUSIC_VOLUME })
     })
@@ -853,6 +854,7 @@ export class MainScene extends Phaser.Scene {
 
     this.time.delayedCall(TOOL_POP_HOLD_MS, () => {
       icon.setScale(1)
+      if (this.cache.audio.exists(AUDIO.thud)) this.sound.play(AUDIO.thud, { volume: THUD_VOLUME })
       TOOL_RUMBLE_X.forEach((dx, i) => {
         this.time.delayedCall(TOOL_RUMBLE_STEP_MS * i, () => icon.setX(slot.x + dx * TOOL_RUMBLE_PX))
       })
