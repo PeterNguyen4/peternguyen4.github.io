@@ -4,6 +4,7 @@ import hoverSound from '../assets/audio/hover.mp3'
 import itemPickup from '../assets/audio/item-pickup.mp3'
 import popupClose from '../assets/audio/popup-close.mp3'
 import popupOpen from '../assets/audio/popup-open.mp3'
+import thud from '../assets/audio/thud.mp3'
 import background from '../assets/backgrounds/background.png'
 import arrow from '../assets/icons/arrow-up-right.png'
 import coffee from '../assets/icons/coffee.png'
@@ -121,6 +122,7 @@ export const AUDIO = {
   itemPickup: 'item-pickup',
   popupOpen: 'popup-open',
   popupClose: 'popup-close',
+  thud: 'thud',
 } as const
 
 export const SOUNDS = {
@@ -130,6 +132,7 @@ export const SOUNDS = {
   [AUDIO.itemPickup]: itemPickup,
   [AUDIO.popupOpen]: popupOpen,
   [AUDIO.popupClose]: popupClose,
+  [AUDIO.thud]: thud,
 } as const
 
 export const ANIM = {

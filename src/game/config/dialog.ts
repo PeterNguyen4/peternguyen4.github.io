@@ -11,5 +11,6 @@ export const DIALOG_PORTRAIT = { right: 2, bottom: 0 }
 export const DIALOG_NAME = { color: '#e8a05a' }
 export const DIALOG_LABEL = { slice: 4, height: 17, padX: 9, textY: 5, x: 8, overlap: 6 }
 export const DIALOG_BLIP_VOLUME = 0.5
-export const ITEM_PICKUP_VOLUME = 0.5
+export const ITEM_PICKUP_VOLUME = 0.4
 export const DIALOG_TYPE_MS = { char: 55, dot: 250 }
+export const THUD_VOLUME = 0.9
