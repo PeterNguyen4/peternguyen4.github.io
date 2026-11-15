@@ -1,10 +1,13 @@
 import music from '../assets/audio/byte_roast.mp3'
 import dialogueBlip from '../assets/audio/dialogue.mp3'
+import furScratch from '../assets/audio/fur-scratch.mp3'
 import hoverSound from '../assets/audio/hover.mp3'
 import itemPickup from '../assets/audio/item-pickup.mp3'
+import paperSound from '../assets/audio/paper.mp3'
 import popupClose from '../assets/audio/popup-close.mp3'
 import popupOpen from '../assets/audio/popup-open.mp3'
 import thud from '../assets/audio/thud.mp3'
+import whoosh from '../assets/audio/whoosh.mp3'
 import background from '../assets/backgrounds/background.png'
 import arrow from '../assets/icons/arrow-up-right.png'
 import coffee from '../assets/icons/coffee.png'
@@ -118,21 +121,27 @@ export const TEXTURE = {
 export const AUDIO = {
   music: 'music',
   dialogue: 'dialogue',
+  furScratch: 'fur-scratch',
   hover: 'hover',
   itemPickup: 'item-pickup',
+  paper: 'paper',
   popupOpen: 'popup-open',
   popupClose: 'popup-close',
   thud: 'thud',
+  whoosh: 'whoosh',
 } as const
 
 export const SOUNDS = {
   [AUDIO.music]: music,
   [AUDIO.dialogue]: dialogueBlip,
+  [AUDIO.furScratch]: furScratch,
   [AUDIO.hover]: hoverSound,
   [AUDIO.itemPickup]: itemPickup,
+  [AUDIO.paper]: paperSound,
   [AUDIO.popupOpen]: popupOpen,
   [AUDIO.popupClose]: popupClose,
   [AUDIO.thud]: thud,
+  [AUDIO.whoosh]: whoosh,
 } as const
 
 export const ANIM = {
