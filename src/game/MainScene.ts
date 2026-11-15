@@ -53,9 +53,9 @@ import {
   ICON_GAP,
   NIGHT_COLOR,
 } from './config/coffee'
-import { ITEM_COLOR, ITEM_PICKUP_VOLUME, THUD_VOLUME } from './config/dialog'
+import { ITEM_COLOR, ITEM_PICKUP_VOLUME, FUR_SCRATCH_VOLUME, PAPER_VOLUME, THUD_VOLUME, WHOOSH_VOLUME } from './config/dialog'
 import { COFFEE_POPUP, DIPLOMA_POPUP, PALETTE, PANEL_SLICE, POPUP_WRAP_PAD, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
-import { CAT_FPS, END_HOLD_MS, HAND_PROFILE_FPS, PET_DIALOG_DELAY_MS, PET_FPS, PET_FRAMES, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
+import { CAT_FPS, END_HOLD_MS, PAPER_SOUND_DELAY_MS, PET_SCRATCH_MS, HAND_PROFILE_FPS, PET_DIALOG_DELAY_MS, PET_FPS, PET_FRAMES, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
   TOOL_GAP,
   TOOL_ICONS,
@@ -77,7 +77,7 @@ import {
   MUSIC_VOLUME,
   VOLUME_BUTTON,
 } from './config/toolbar'
-import { TOOL_GLOW_DELAY_MS, TOOL_GLOW_MS, TOOL_POP_HOLD_MS, TOOL_POP_SCALE, TOOL_RUMBLE_PX, TOOL_RUMBLE_STEP_MS, TOOL_RUMBLE_X } from './effects/easing'
+import { TOOL_FLY_MS, TOOL_FLY_START_SCALE, TOOL_FLY_TRAIL_ALPHA, TOOL_FLY_TRAIL_FADE_MS, TOOL_FLY_TRAIL_MS, TOOL_GLOW_DELAY_MS, TOOL_GLOW_MS, TOOL_POP_SCALE, TOOL_RUMBLE_PX, TOOL_RUMBLE_STEP_MS, TOOL_RUMBLE_X } from './effects/easing'
 import { makeHoverable, makeHoverableSprite, playHoverSound } from './effects/hover'
 import { addBanner, BANNER_STYLE, BANNER_TALL_STYLE } from './Banner'
 import { showDialog } from './Dialog'
@@ -125,7 +125,7 @@ export class MainScene extends Phaser.Scene {
   private tooltipArrow!: Phaser.GameObjects.Image
   private tooltipHop: Phaser.Time.TimerEvent[] = []
   private volumeButton!: Phaser.GameObjects.Image
-  private musicOn = false
+  private musicOn = true
   private horizontalBar = false
   private portrait = false
   private rotateHint?: { dim: Phaser.GameObjects.Rectangle; icon: Phaser.GameObjects.Sprite; label: Phaser.GameObjects.Text }
@@ -280,6 +280,9 @@ export class MainScene extends Phaser.Scene {
       this.profiles.disableInteractive(true)
       this.removeTodo(0)
       this.person.play(ANIM.handProfile)
+      this.time.delayedCall(PAPER_SOUND_DELAY_MS, () => {
+        if (this.cache.audio.exists(AUDIO.paper)) this.sound.play(AUDIO.paper, { volume: PAPER_VOLUME })
+      })
     })
 
     this.person.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIM.handProfile, () => {
@@ -351,6 +354,9 @@ export class MainScene extends Phaser.Scene {
     this.load.audio(AUDIO.popupOpen, SOUNDS[AUDIO.popupOpen])
     this.load.audio(AUDIO.popupClose, SOUNDS[AUDIO.popupClose])
     this.load.audio(AUDIO.thud, SOUNDS[AUDIO.thud])
+    this.load.audio(AUDIO.furScratch, SOUNDS[AUDIO.furScratch])
+    this.load.audio(AUDIO.paper, SOUNDS[AUDIO.paper])
+    this.load.audio(AUDIO.whoosh, SOUNDS[AUDIO.whoosh])
     this.load.once(`filecomplete-audio-${AUDIO.music}`, () => {
       this.sound.play(AUDIO.music, { loop: true, volume: MUSIC_VOLUME })
     })
@@ -359,14 +365,13 @@ export class MainScene extends Phaser.Scene {
 
   private addVolumeButton() {
     const { textures } = VOLUME_BUTTON
-    this.musicOn = false
     this.sound.mute = !this.musicOn
     this.loadMusic()
     const frames = () => (this.musicOn ? textures.on : textures.off)
     const showTip = () => {
       this.showTooltipAt(this.musicOn ? 'Music: ON' : 'Music: OFF', this.volumeTipX, this.volumeButton.y, false)
     }
-    this.volumeButton = this.add.image(0, 0, textures.off.base).setDepth(5.5)
+    this.volumeButton = this.add.image(0, 0, frames().base).setDepth(5.5)
     const hold = createPressHold(this)
     this.volumeButton
       .setInteractive({ useHandCursor: true })
@@ -408,6 +413,11 @@ export class MainScene extends Phaser.Scene {
     this.onPetDone = onDone
     this.person.setVisible(false)
     this.personPet.setVisible(true).play(ANIM.petCat)
+    PET_SCRATCH_MS.forEach((ms) =>
+      this.time.delayedCall(ms, () => {
+        if (this.cache.audio.exists(AUDIO.furScratch)) this.sound.play(AUDIO.furScratch, { volume: FUR_SCRATCH_VOLUME })
+      }),
+    )
   }
 
   private removeTodo(i: number) {
@@ -846,22 +856,49 @@ export class MainScene extends Phaser.Scene {
     const index = this.toolIcons.length
     if (index >= TOOL_SLOTS || this.toolIcons.some((icon) => icon.texture.key === textureKey)) return
     const slot = this.toolItems[index]
-    const icon = this.add.image(slot.x, slot.y, textureKey).setDepth(5.5).setScale(TOOL_POP_SCALE)
+    const icon = this.add.image(0, 0, textureKey).setDepth(5.5)
     this.toolIcons[index] = icon
     this.toolLabels[index] = label
     slot.input!.cursor = 'pointer'
     slot.on('pointerdown', onClick)
 
-    this.time.delayedCall(TOOL_POP_HOLD_MS, () => {
-      icon.setScale(1)
-      if (this.cache.audio.exists(AUDIO.thud)) this.sound.play(AUDIO.thud, { volume: THUD_VOLUME })
-      TOOL_RUMBLE_X.forEach((dx, i) => {
-        this.time.delayedCall(TOOL_RUMBLE_STEP_MS * i, () => icon.setX(slot.x + dx * TOOL_RUMBLE_PX))
-      })
-      this.time.delayedCall(TOOL_RUMBLE_STEP_MS * TOOL_RUMBLE_X.length + TOOL_GLOW_DELAY_MS, () => {
-        slot.setTexture(TEXTURE.toolItemFocus)
-        this.time.delayedCall(TOOL_GLOW_MS, () => slot.setTexture(TEXTURE.toolItem))
-      })
+    const startX = this.scale.width / 2
+    const startY = this.scale.height / 2
+    const fly = { t: 0, lastTrail: 0 }
+    const place = () => {
+      const ease = fly.t
+      icon.setPosition(Phaser.Math.Linear(startX, slot.x, ease), Phaser.Math.Linear(startY, slot.y, ease))
+      icon.setScale(Phaser.Math.Linear(TOOL_FLY_START_SCALE, TOOL_POP_SCALE, ease))
+    }
+    place()
+    if (this.cache.audio.exists(AUDIO.whoosh)) this.sound.play(AUDIO.whoosh, { volume: WHOOSH_VOLUME })
+    this.tweens.add({
+      targets: fly,
+      t: 1,
+      duration: TOOL_FLY_MS,
+      ease: 'Sine.easeInOut',
+      onUpdate: (tween) => {
+        place()
+        if (tween.elapsed - fly.lastTrail < TOOL_FLY_TRAIL_MS) return
+        fly.lastTrail = tween.elapsed
+        const ghost = this.add
+          .image(icon.x, icon.y, textureKey)
+          .setDepth(5.4)
+          .setScale(icon.scale)
+          .setAlpha(TOOL_FLY_TRAIL_ALPHA)
+        this.tweens.add({ targets: ghost, alpha: 0, duration: TOOL_FLY_TRAIL_FADE_MS, onComplete: () => ghost.destroy() })
+      },
+      onComplete: () => {
+        icon.setScale(1)
+        if (this.cache.audio.exists(AUDIO.thud)) this.sound.play(AUDIO.thud, { volume: THUD_VOLUME })
+        TOOL_RUMBLE_X.forEach((dx, i) => {
+          this.time.delayedCall(TOOL_RUMBLE_STEP_MS * i, () => icon.setX(slot.x + dx * TOOL_RUMBLE_PX))
+        })
+        this.time.delayedCall(TOOL_RUMBLE_STEP_MS * TOOL_RUMBLE_X.length + TOOL_GLOW_DELAY_MS, () => {
+          slot.setTexture(TEXTURE.toolItemFocus)
+          this.time.delayedCall(TOOL_GLOW_MS, () => slot.setTexture(TEXTURE.toolItem))
+        })
+      },
     })
   }
 
