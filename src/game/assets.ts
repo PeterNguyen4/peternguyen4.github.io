@@ -56,6 +56,7 @@ import diplomaItem from '../assets/props/diploma-item.png'
 import diplomaWall from '../assets/props/diploma-wall.png'
 import heart from '../assets/icons/heart.png'
 import catDialogue from '../assets/props/cat-dialogue.png'
+import peterDialogue from '../assets/props/peter-dialogue.png'
 import catSheet from '../assets/sprites/cat-spritesheet.png'
 import peterProfileSheet from '../assets/sprites/peter-profile-spritesheet.png'
 import peterPetSheet from '../assets/sprites/peter-pet-spritesheet.png'
@@ -69,6 +70,7 @@ export const TEXTURE = {
   button: 'button',
   cat: 'cat',
   catDialogue: 'cat-dialogue',
+  peterDialogue: 'peter-dialogue',
   buttonHover: 'button-hover',
   buttonClick: 'button-down',
   dialogue: 'dialogue',
@@ -166,6 +168,7 @@ export const IMAGES = {
   [TEXTURE.heart]: heart,
   [TEXTURE.background]: background,
   [TEXTURE.catDialogue]: catDialogue,
+  [TEXTURE.peterDialogue]: peterDialogue,
   [TEXTURE.closeButton]: closeButton,
   [TEXTURE.closeButtonHover]: closeButtonHover,
   [TEXTURE.closeButtonClick]: closeButtonClick,
