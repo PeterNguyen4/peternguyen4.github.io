@@ -22,6 +22,7 @@ export interface DialogOptions {
   parts: [string, string?][]
   speaker?: string
   portrait?: string
+  portraitLift?: number
   typewriter?: boolean
   bottom?: number
   onClose?: () => void
@@ -64,7 +65,7 @@ export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
 
   const portrait = opts.portrait
     ? scene.add
-        .image(left + width - DIALOG_PORTRAIT.right, top + DIALOG_HEIGHT - DIALOG_PORTRAIT.bottom, opts.portrait)
+        .image(left + width - DIALOG_PORTRAIT.right, top + DIALOG_HEIGHT - DIALOG_PORTRAIT.bottom - (opts.portraitLift ?? 0), opts.portrait)
         .setOrigin(1, 1)
     : undefined
   const inset = portrait ? portrait.width + DIALOG_PORTRAIT.right : 0

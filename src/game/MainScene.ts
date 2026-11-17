@@ -53,7 +53,7 @@ import {
   ICON_GAP,
   NIGHT_COLOR,
 } from './config/coffee'
-import { ITEM_COLOR, ITEM_PICKUP_VOLUME, FUR_SCRATCH_VOLUME, PAPER_VOLUME, THUD_VOLUME, WHOOSH_VOLUME } from './config/dialog'
+import { ITEM_COLOR, ITEM_PICKUP_VOLUME, FUR_SCRATCH_VOLUME, PAPER_VOLUME, PETER_PORTRAIT_LIFT, THUD_VOLUME, WHOOSH_VOLUME } from './config/dialog'
 import { COFFEE_POPUP, DIPLOMA_POPUP, PALETTE, PANEL_SLICE, POPUP_WRAP_PAD, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
 import { CAT_FPS, END_HOLD_MS, PAPER_SOUND_DELAY_MS, PET_SCRATCH_MS, HAND_PROFILE_FPS, PET_DIALOG_DELAY_MS, PET_FPS, PET_FRAMES, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
@@ -294,6 +294,27 @@ export class MainScene extends Phaser.Scene {
 
     this.layout()
     this.showRotateHint()
+    const welcome = () =>
+      showDialog(this, {
+        parts: [['Welcome to my coffee shop! Feel free to look around.']],
+        speaker: 'Peter',
+        portrait: TEXTURE.peterDialogue,
+        portraitLift: PETER_PORTRAIT_LIFT,
+        typewriter: true,
+        bottom: this.sceneBottom,
+      })
+    if (this.cache.audio.exists(AUDIO.dialogue)) welcome()
+    else {
+      let shown = false
+      const once = () => {
+        if (shown) return
+        shown = true
+        welcome()
+      }
+      this.load.once(`filecomplete-audio-${AUDIO.dialogue}`, once)
+      this.load.once(`loaderror`, once)
+      this.time.delayedCall(2000, once)
+    }
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this))
   }
