@@ -227,7 +227,7 @@ export class MainScene extends Phaser.Scene {
       this.removeTodo(2)
       this.petCat(() =>
         this.time.delayedCall(PET_DIALOG_DELAY_MS, () =>
-          showDialog(this, { parts: [['...']], speaker: 'Cat', portrait: TEXTURE.catDialogue, typewriter: true, bottom: this.sceneBottom }),
+          showDialog(this, { parts: [['...']], speaker: 'Cat', portrait: TEXTURE.catDialogue, typewriter: true, bottom: () => this.sceneBottom }),
         ),
       )
     })
@@ -310,7 +310,7 @@ export class MainScene extends Phaser.Scene {
         stackPortraitOnMobile: true,
         dim: PETER_DIALOG_DIM,
         typewriter: true,
-        bottom: this.sceneBottom,
+        bottom: () => this.sceneBottom,
       })
       this.welcomeDim?.destroy()
       this.welcomeDim = undefined
@@ -539,7 +539,7 @@ export class MainScene extends Phaser.Scene {
 
   private showObtained(item: string, color: string, onClose: () => void) {
     if (this.cache.audio.exists(AUDIO.itemPickup)) this.sound.play(AUDIO.itemPickup, { volume: ITEM_PICKUP_VOLUME })
-    showDialog(this, { parts: [['You obtained '], [item, color], ['!']], onClose, bottom: this.sceneBottom })
+    showDialog(this, { parts: [['You obtained '], [item, color], ['!']], onClose, bottom: () => this.sceneBottom })
   }
 
   private showProfile() {

@@ -26,77 +26,106 @@ export interface DialogOptions {
   stackPortraitOnMobile?: boolean
   dim?: number
   typewriter?: boolean
-  bottom?: number
+  bottom?: number | (() => number)
   onClose?: () => void
 }
 
-function createLabel(scene: Phaser.Scene, speaker: string, left: number, top: number) {
+function createLabel(scene: Phaser.Scene, speaker: string) {
   const { slice, height, padX, textY, x, overlap } = DIALOG_LABEL
   const labelWidth = inkWidth(speaker) + padX * 2
-  const labelTop = top - height + overlap
   const bg = scene.add
-    .nineslice(left + x, labelTop, TEXTURE.dialogueLabel, undefined, labelWidth, height, slice, slice, slice, slice)
+    .nineslice(0, 0, TEXTURE.dialogueLabel, undefined, labelWidth, height, slice, slice, slice, slice)
     .setOrigin(0)
-  const text = addText(scene, left + x + padX, labelTop + textY, speaker, { color: DIALOG_NAME.color }).setOrigin(0)
-  return [bg, text]
+  const text = addText(scene, 0, 0, speaker, { color: DIALOG_NAME.color }).setOrigin(0)
+  const place = (left: number, top: number) => {
+    const labelTop = top - height + overlap
+    bg.setPosition(left + x, labelTop)
+    text.setPosition(left + x + padX, labelTop + textY)
+  }
+  return { parts: [bg, text], place }
 }
 
 export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
-  const { width: W, height: H } = scene.scale
-  const width = Math.round(W * DIALOG_WIDTH)
-  const left = Math.round((W - width) / 2)
   const container = scene.add.container(0, 0).setDepth(POPUP_DEPTH)
-  const catcher = scene.add.rectangle(0, 0, W, H, 0x000000, opts.dim ?? 0).setOrigin(0).setInteractive()
-
+  const catcher = scene.add.rectangle(0, 0, 1, 1, 0x000000, opts.dim ?? 0).setOrigin(0).setInteractive()
   const portrait = opts.portrait ? scene.add.image(0, 0, opts.portrait).setOrigin(1, 1) : undefined
-  const stacked = !!portrait && !!opts.stackPortraitOnMobile && W < H && !scene.sys.game.device.os.desktop
-  const inset = portrait && !stacked ? portrait.width + DIALOG_PORTRAIT.right : 0
+  const { slice } = DIALOG_PANEL
+  const panel = scene.add.nineslice(0, 0, TEXTURE.dialogue, undefined, 1, 1, slice, slice, slice, slice).setOrigin(0)
+  const label = opts.speaker ? createLabel(scene, opts.speaker) : undefined
+  const arrow = scene.add.image(0, 0, TEXTURE.termination).setVisible(false)
 
-  const startX = left + DIALOG_TEXT_PAD.x
-  const maxX = left + width - inset - DIALOG_ARROW.right - DIALOG_TEXT_PAD.x / 2
-  let textX = startX
-  let textY = DIALOG_TEXT_PAD.y
-  let textBottom = textY
-  let atWordStart = true
   const tokens = opts.parts.flatMap(([str, color]) =>
     (str.match(/\S+\s*|\s+/g) ?? []).map((token) => {
-      const t = addText(scene, 0, 0, token, { color: color ?? DIALOG_TEXT_COLOR }).setOrigin(0)
-      if (atWordStart && textX > startX && textX + inkWidth(token) > maxX) {
-        textX = startX
-        textY += t.height + DIALOG_LINE_GAP
-      }
-      t.setPosition(textX, textY)
-      textBottom = Math.max(textBottom, textY + t.height)
-      textX += t.width
-      atWordStart = /\s$/.test(token)
-      t.setText('').setVisible(false)
-      return { text: t, full: token }
+      const text = addText(scene, 0, 0, token, { color: color ?? DIALOG_TEXT_COLOR }).setOrigin(0)
+      const metrics = { w: text.width, h: text.height, ink: inkWidth(token) }
+      text.setText('').setVisible(false)
+      return { text, full: token, ...metrics }
     }),
   )
   const chars = tokens.flatMap(({ full }, token) => [...full].map((ch) => ({ token, ch })))
 
-  const panelHeight = Math.max(DIALOG_HEIGHT, textBottom + DIALOG_TEXT_PAD.y)
-  const top = (opts.bottom ?? H) - DIALOG_BOTTOM_MARGIN - panelHeight
-  tokens.forEach(({ text }) => text.setY(top + text.y))
-
-  const { slice } = DIALOG_PANEL
-  const panel = scene.add
-    .nineslice(left, top, TEXTURE.dialogue, undefined, width, panelHeight, slice, slice, slice, slice)
-    .setOrigin(0)
-  portrait?.setPosition(
-    left + width - DIALOG_PORTRAIT.right,
-    stacked ? top : top + panelHeight - DIALOG_PORTRAIT.bottom - (opts.portraitLift ?? 0),
-  )
-
-  const labelParts = opts.speaker ? createLabel(scene, opts.speaker, left, top) : []
-
-  const { right, bottom, bobMs } = DIALOG_ARROW
-  const ax = left + width - inset - right
-  const ay = top + panelHeight - bottom
-  const arrow = scene.add.image(ax, ay, TEXTURE.termination).setVisible(false)
+  let ay = 0
   let raised = false
+  const layout = () => {
+    const { width: W, height: H } = scene.scale
+    const bottomEdge = typeof opts.bottom === 'function' ? opts.bottom() : opts.bottom ?? H
+    const width = Math.round(W * DIALOG_WIDTH)
+    const left = Math.round((W - width) / 2)
+    const stacked = !!portrait && !!opts.stackPortraitOnMobile && W < H && !scene.sys.game.device.os.desktop
+    const inset = portrait && !stacked ? portrait.width + DIALOG_PORTRAIT.right : 0
+
+    const startX = left + DIALOG_TEXT_PAD.x
+    const maxX = left + width - inset - DIALOG_ARROW.right - DIALOG_TEXT_PAD.x / 2
+    let x = startX
+    let y = DIALOG_TEXT_PAD.y
+    let textBottom = y
+    let atWordStart = true
+    const rel = tokens.map((t) => {
+      if (atWordStart && x > startX && x + t.ink > maxX) {
+        x = startX
+        y += t.h + DIALOG_LINE_GAP
+      }
+      const pos = { x, y }
+      textBottom = Math.max(textBottom, y + t.h)
+      x += t.w
+      atWordStart = /\s$/.test(t.full)
+      return pos
+    })
+    const panelHeight = Math.max(DIALOG_HEIGHT, textBottom + DIALOG_TEXT_PAD.y)
+    const top = bottomEdge - DIALOG_BOTTOM_MARGIN - panelHeight
+
+    catcher.setSize(W, H)
+    catcher.input?.hitArea.setSize(W, H)
+    panel.setPosition(left, top).setSize(width, panelHeight)
+    tokens.forEach(({ text }, i) => text.setPosition(rel[i].x, top + rel[i].y))
+    label?.place(left, top)
+    portrait?.setPosition(
+      left + width - DIALOG_PORTRAIT.right,
+      stacked ? top : top + panelHeight - DIALOG_PORTRAIT.bottom - (opts.portraitLift ?? 0),
+    )
+    if (portrait) {
+      if (stacked) container.moveTo(portrait, container.getIndex(panel))
+      else container.bringToTop(portrait)
+      container.bringToTop(arrow)
+    }
+    ay = top + panelHeight - DIALOG_ARROW.bottom
+    arrow.setPosition(left + width - inset - DIALOG_ARROW.right, raised ? ay - 1 : ay)
+  }
+
+  container.add([
+    catcher,
+    panel,
+    ...(label?.parts ?? []),
+    ...tokens.map((t) => t.text),
+    ...(portrait ? [portrait] : []),
+    arrow,
+  ])
+  layout()
+  scene.scale.on(Phaser.Scale.Events.RESIZE, layout)
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => scene.scale.off(Phaser.Scale.Events.RESIZE, layout))
+
   const bobTimer = scene.time.addEvent({
-    delay: bobMs,
+    delay: DIALOG_ARROW.bobMs,
     loop: true,
     callback: () => {
       raised = !raised
@@ -130,16 +159,6 @@ export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
   if (opts.typewriter) typeNext()
   else reveal(chars.length)
 
-  const portraitLayer = portrait ? [portrait] : []
-  container.add([
-    catcher,
-    ...(stacked ? portraitLayer : []),
-    panel,
-    ...labelParts,
-    ...tokens.map((t) => t.text),
-    ...(stacked ? [] : portraitLayer),
-    arrow,
-  ])
   catcher.on('pointerdown', () => {
     if (shown < chars.length) {
       typer?.remove()
@@ -147,6 +166,7 @@ export function showDialog(scene: Phaser.Scene, opts: DialogOptions) {
       reveal(chars.length)
       return
     }
+    scene.scale.off(Phaser.Scale.Events.RESIZE, layout)
     bobTimer.remove()
     blip?.destroy()
     container.destroy()
