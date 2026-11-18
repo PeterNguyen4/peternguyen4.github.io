@@ -53,7 +53,7 @@ import {
   ICON_GAP,
   NIGHT_COLOR,
 } from './config/coffee'
-import { ITEM_COLOR, ITEM_PICKUP_VOLUME, FUR_SCRATCH_VOLUME, PAPER_VOLUME, PETER_PORTRAIT_LIFT, THUD_VOLUME, WHOOSH_VOLUME } from './config/dialog'
+import { ITEM_COLOR, ITEM_PICKUP_VOLUME, FUR_SCRATCH_VOLUME, PAPER_VOLUME, PETER_PORTRAIT_LIFT, PETER_DIALOG_DIM, THUD_VOLUME, WHOOSH_VOLUME } from './config/dialog'
 import { COFFEE_POPUP, DIPLOMA_POPUP, PALETTE, PANEL_SLICE, POPUP_WRAP_PAD, PROFILE_LAYOUT, PROFILE_POPUP } from './config/popup'
 import { CAT_FPS, END_HOLD_MS, PAPER_SOUND_DELAY_MS, PET_SCRATCH_MS, HAND_PROFILE_FPS, PET_DIALOG_DELAY_MS, PET_FPS, PET_FRAMES, ROTATE_FADE_MS, ROTATE_FPS, ROTATE_PLAYS, ROTATE_REPEAT_DELAY_MS, PROFILE_LAST_FRAME_HOLD_MS, STEAM_FPS, TODO_HOP_MS, TODO_PAUSE_MS } from './config/timing'
 import {
@@ -128,6 +128,8 @@ export class MainScene extends Phaser.Scene {
   private musicOn = true
   private horizontalBar = false
   private portrait = false
+  private onRotateHintDone?: () => void
+  private welcomeDim?: Phaser.GameObjects.Rectangle
   private rotateHint?: { dim: Phaser.GameObjects.Rectangle; icon: Phaser.GameObjects.Sprite; label: Phaser.GameObjects.Text }
   private volumeTipX = 0
   private coffeeObtained = false
@@ -292,29 +294,51 @@ export class MainScene extends Phaser.Scene {
       })
     })
 
+    this.welcomeDim = this.add
+      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, PETER_DIALOG_DIM)
+      .setOrigin(0)
+      .setDepth(ROTATE_OVERLAY.depth - 1)
+      .setInteractive()
     this.layout()
     this.showRotateHint()
-    const welcome = () =>
+    const welcome = () => {
       showDialog(this, {
         parts: [['Welcome to my coffee shop! Feel free to look around.']],
         speaker: 'Peter',
         portrait: TEXTURE.peterDialogue,
         portraitLift: PETER_PORTRAIT_LIFT,
+        stackPortraitOnMobile: true,
+        dim: PETER_DIALOG_DIM,
         typewriter: true,
         bottom: this.sceneBottom,
       })
-    if (this.cache.audio.exists(AUDIO.dialogue)) welcome()
-    else {
-      let shown = false
-      const once = () => {
-        if (shown) return
-        shown = true
-        welcome()
-      }
-      this.load.once(`filecomplete-audio-${AUDIO.dialogue}`, once)
-      this.load.once(`loaderror`, once)
-      this.time.delayedCall(2000, once)
+      this.welcomeDim?.destroy()
+      this.welcomeDim = undefined
     }
+    let audioReady = this.cache.audio.exists(AUDIO.dialogue)
+    let hintDone = !this.rotateHint
+    let started = false
+    const tryStart = () => {
+      if (started || !audioReady || !hintDone) return
+      started = true
+      welcome()
+    }
+    if (!audioReady) {
+      const ready = () => {
+        audioReady = true
+        tryStart()
+      }
+      this.load.once(`filecomplete-audio-${AUDIO.dialogue}`, ready)
+      this.load.once(`loaderror`, ready)
+      this.time.delayedCall(2000, ready)
+    }
+    if (!hintDone) {
+      this.onRotateHintDone = () => {
+        hintDone = true
+        tryStart()
+      }
+    }
+    tryStart()
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this))
   }
@@ -363,6 +387,8 @@ export class MainScene extends Phaser.Scene {
         hint.dim.destroy()
         hint.icon.destroy()
         hint.label.destroy()
+        this.onRotateHintDone?.()
+        this.onRotateHintDone = undefined
       },
     })
   }
@@ -929,6 +955,8 @@ export class MainScene extends Phaser.Scene {
     this.portrait = W < H
     this.horizontalBar = this.portrait || H > this.bg.height
     this.game.canvas.closest('.game-frame')?.classList.toggle('letterboxed', this.horizontalBar)
+    this.welcomeDim?.setSize(W, H)
+    this.welcomeDim?.input?.hitArea.setSize(W, H)
     if (this.rotateHint) {
       this.rotateHint.dim.setSize(W, H)
       this.rotateHint.dim.input?.hitArea.setSize(W, H)
