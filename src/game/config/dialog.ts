@@ -9,6 +9,7 @@ export const ITEM_COLOR = { coffee: '#e8a05a', profile: '#7fb8e8' } as const
 export const DIALOG_LINE_GAP = 3
 export const DIALOG_PORTRAIT = { right: 2, bottom: 0 }
 export const PETER_PORTRAIT_LIFT = 2
+export const PETER_DIALOG_DIM = 0.35
 export const DIALOG_NAME = { color: '#e8a05a' }
 export const DIALOG_LABEL = { slice: 4, height: 17, padX: 9, textY: 5, x: 8, overlap: 6 }
 export const DIALOG_BLIP_VOLUME = 0.5
